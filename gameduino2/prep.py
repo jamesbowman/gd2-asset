@@ -13,9 +13,10 @@ import ImageDraw
 
 import gameduino2 as gd2
 import gameduino2.convert
+from gameduino2.imbytes import imbytes
 
 def stretch(im):
-    d = array.array('B', im.tostring())
+    d = imbytes(im)
     # print min(d), max(d)
     r = max(d) - min(d)
     return im.point(lambda x: (x - min(d)) * 255 / r)
@@ -62,8 +63,8 @@ def even(im):
 def extents(im):
     """ find pixel extents of im, as a box """
     w,h = im.size
-    cols = [set(im.crop((i, 0, i + 1, im.size[1])).tostring()) != set(chr(0)) for i in range(w)]
-    rows = [set(im.crop((0, i, im.size[0], i + 1)).tostring()) != set(chr(0)) for i in range(h)]
+    cols = [set(imbytes(im.crop((i, 0, i + 1, im.size[1])))) != set([0]) for i in range(w)]
+    rows = [set(imbytes(im.crop((0, i, im.size[0], i + 1)))) != set([0]) for i in range(h)]
     if not True in cols:
         return (0, 0, 0, 0)
     else:

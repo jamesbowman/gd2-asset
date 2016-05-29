@@ -3,6 +3,7 @@ import array
 import random
 
 from gameduino2.registers import *
+from gameduino2.imbytes import imbytes
 
 def convert(im, dither = False, fmt = ARGB1555):
     """ Convert PIL image to GD2 format, optionally dithering"""
@@ -49,26 +50,19 @@ def convert(im, dither = False, fmt = ARGB1555):
         lut.putdata(range(256))
         palstr = lut.convert("RGBA").tobytes()
         rgba = zip(*(array.array('B', palstr[i::4]) for i in range(4)))
-        """
-        for i,(r,g,b,a) in enumerate(rgba):
-            self.memory[RAM_PAL + 4 * i + 0] = b
-            self.memory[RAM_PAL + 4 * i + 1] = g
-            self.memory[RAM_PAL + 4 * i + 2] = r
-            self.memory[RAM_PAL + 4 * i + 3] = a
-        """
-        data = array.array('B', im.tostring())
+        data = imbytes(im)
         totalsz = 8
     elif fmt == L8:
-        data = array.array('B', im.tostring())
+        data = imbytes(im)
         totalsz = 8
     elif fmt == L4:
-        b0 = im.tostring()[::2]
-        b1 = im.tostring()[1::2]
+        b0 = imbytes(im)[::2]
+        b1 = imbytes(im)[1::2]
         def to15(c):
             if dither:
-                dc = min(255, ord(c) + rnd.randrange(16))
+                dc = min(255, c + rnd.randrange(16))
             else:
-                dc = ord(c)
+                dc = c
             return int((15. * dc / 255))
                 
         data = array.array('B', [(16 * to15(l) + to15(r)) for (l,r) in zip(b0, b1)])
@@ -78,6 +72,6 @@ def convert(im, dither = False, fmt = ARGB1555):
             im = im.convert("1", dither=Image.FLOYDSTEINBERG)
         else:
             im = im.convert("1", dither=Image.NONE)
-        data = array.array('B', im.tostring())
+        data = imbytes(im)
         totalsz = 1
     return (im.size, data)
