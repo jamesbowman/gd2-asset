@@ -1,6 +1,6 @@
 from distutils.core import setup
 setup(name='gameduino2',
-      version='0.1.5',
+      version='0.1.6',
       author='James Bowman',
       author_email='jamesb@excamera.com',
       url='http://gameduino.com',

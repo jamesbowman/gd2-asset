@@ -3,6 +3,7 @@ setup.py
 gameduino2/__init__.py
 gameduino2/base.py
 gameduino2/convert.py
+gameduino2/imbytes.py
 gameduino2/prep.py
 gameduino2/psdparser.py
 gameduino2/registers.py
