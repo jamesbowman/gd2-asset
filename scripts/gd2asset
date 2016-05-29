@@ -1,0 +1,127 @@
+#!/usr/bin/python
+
+import gameduino2 as gd2
+import os
+import array
+
+import Image
+import wave
+import audioop
+
+def cname(s):
+    """ make name s C-friendly """
+    for c in "-+.":
+        s = s.replace(c, "_")
+    return s.upper()
+
+class GD2Assets(gd2.prep.AssetBin):
+
+    def __init__(self, opts, args):
+        self.opts = opts
+        self.args = args
+        gd2.prep.AssetBin.__init__(self)
+        self.header = opts.get('-o', 'default_assets.h')
+
+        if '-f' in opts:
+            self.asset_file = opts['-f']
+
+        self.handlers = {
+            'png' : (self.image, "PNG image file (options: format)"),
+            'jpg' : (self.image, "JPEG image file (options: format)"),
+            'bmp' : (self.image, "BMP image file (options: format)"),
+            'gif' : (self.image, "GIF image file (options: format)"),
+            'ttf' : (self.ttf, "TrueType font file (options: format, size)"),
+            'wav' : (self.sample, "Audio sample, mono 16-bit (no options)"),
+        }
+
+    def parse_format(self, format):
+        formats = ('ARGB1555', 'L1', 'L4', 'L8', 'RGB332', 'ARGB2', 'ARGB4', 'RGB565')
+        if format not in formats:
+            print 'ERROR: unknown format "%s"' % format
+            print
+            print 'Formats are: %s' % " ".join(formats)
+            sys.exit(1)
+        return eval("gd2." + format)
+
+    def image(self, suffix, ff, format = 'ARGB4'):
+        name = cname(os.path.basename(ff[0])[:-1 - len(suffix)])
+        self.load_handle(name, [Image.open(f) for f in ff], self.parse_format(format))
+
+    def ttf(self, suffix, f, size = '12', format = 'L4'):
+        name = cname(os.path.basename(f[0])[:-1 - len(suffix)])
+        self.load_ttf(name, f[0], int(size), self.parse_format(format))
+
+    def sample(self, suffix, f):
+        name = os.path.basename(f[0])[:-1 - len(suffix)].upper()
+        f = wave.open(f[0], "rb")
+        if f.getnchannels() != 1:
+            print "Sorry - .wav file must be mono"
+            sys.exit(1)
+        if f.getsampwidth() != 2:
+            print "Sorry - .wav file must be 16-bit"
+            sys.exit(1)
+        freq = f.getframerate()
+        pcm16 = f.readframes(f.getnframes())
+        (adpcm, _) = audioop.lin2adpcm(pcm16, f.getsampwidth(), (0,0))
+        adpcm = adpcm[:len(adpcm) & ~7]
+        da = array.array('B', [((ord(c) >> 4) | ((15 & ord(c)) << 4)) for c in adpcm])
+        self.align(8)
+        self.add(name, da.tostring())
+        self.define(name + "_LENGTH", len(da))
+        self.define(name + "_FREQ", freq)
+
+    def error(self, suffix, f, **_):
+        print 'ERROR: cannot identify type of file "%s"' % f
+        print
+        print 'recognized file types are:'
+        for suffix,(_, doc) in sorted(self.handlers.items()):
+            print '  %s   %s' % (suffix, doc)
+        sys.exit(1)
+
+    def addall(self):
+        for a in self.args:
+            a = a.split(',')
+            f = []
+            vars = {}
+            for part in a:
+                if '=' in part:
+                    varval = part.split('=')
+                    if len(varval) != 2:
+                        print 'ERROR: syntax error in asset specification "%s"' % setting
+                        sys.exit(1)
+                    (var, val) = varval
+                    vars[var] = val
+                else:
+                    f.append(part)
+            suffix = f[0].split('.')[-1].lower()
+            (handler, _) = self.handlers.get(suffix, (self.error, ''))
+            handler(suffix, f, **vars)
+
+if __name__ == '__main__':
+    import sys, getopt
+    try:
+        optlist, args = getopt.getopt(sys.argv[1:], "o:f:")
+    except getopt.GetoptError:
+        print 'usage: gd2asset <options> <assets>'
+        print
+        print '  -o <name>   output header file'
+        print '  -f <name>   output asset file (default is header file)'
+        print
+        print 'If no output header file is given, then "default_assets.h" is used'
+        print
+        print 'Each asset is a filename, optionally followed by some var=val'
+        print 'assignments. For example:'
+        print '  pic1.png                 image, format ARGB4'
+        print '  pic2.jpg,format=L8       image, format L8'
+        print '  serif.ttf,size=16        font, 16 pixels high'
+        print
+        print 'The assets are compiled into flash, or if the "-f" option is given'
+        print 'into a file. In this case the file should be copied to the'
+        print 'microSD card.'
+        print 'In either case, calling LOAD_ASSETS() from the program loads all'
+        print 'assets.'
+
+        sys.exit(1)
+
+    optdict = dict(optlist)
+    GD2Assets(optdict, args).make()
