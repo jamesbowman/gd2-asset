@@ -258,6 +258,7 @@ class AssetBin(gameduino2.base.GD2):
         # print name, 'font requires', (p1 - p0), 'bytes'
         sz = ims[trim0].size
         self.BitmapSource(p0 - (onechar * trim0));
+        widths = [max(0, w) for w in widths]
         dblock = array.array('B', widths).tostring() + struct.pack("<5i", fmt, 1, sz[0], sz[1], p0 - (onechar * trim0))
         self.alldata += dblock
         self.cmd_setfont(h, p1);
