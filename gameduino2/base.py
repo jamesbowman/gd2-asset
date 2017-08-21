@@ -254,3 +254,23 @@ class GD2:
 
     def cmd_translatef(self, tx, ty):
         self.cmd_translate(int(65536 * tx), int(65536 * ty))
+
+    def cmd_setrotate(self, o):
+        self.c(struct.pack("II", 0xffffff36, o))
+
+    # def cmd_snapshot2(self, 
+    # def cmd_setbase(self, 
+    # def cmd_mediafifo(self, 
+    # def cmd_playvideo(self, 
+    # def cmd_setfont2(self, 
+    # def cmd_setscratch(self, 
+    # def cmd_int_ramshared(self, 
+    # def cmd_int_swloadimage(self, 
+
+    def cmd_romfont(self, *a):
+        self.c(struct.pack("III", 0xffffff3f, *a))
+
+    # def cmd_videostart(self, 
+    # def cmd_videoframe(self, 
+    # def cmd_sync(self, 
+    # def cmd_setbitmap(self, 
