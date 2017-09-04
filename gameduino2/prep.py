@@ -147,6 +147,7 @@ class AssetBin(gameduino2.base.GD2):
         self.inits = []
         self.handle = 0
         self.np = None
+        self.bitmaps = []
 
     def define(self, n, v):
         self.defines.append((self.prefix + n, v))
@@ -190,6 +191,8 @@ class AssetBin(gameduino2.base.GD2):
         self.defines.append(("%s_CELLS" % name, len(images)))
 
         self.align(2)
+
+        self.bitmaps.append((name.lower(), w, h, w / 2, h / 2, len(self.alldata), fmt, self.handle))
 
         self.BitmapHandle(self.handle);
         self.BitmapSource(len(self.alldata));
@@ -461,8 +464,17 @@ class AssetBin(gameduino2.base.GD2):
             print >>hh, "#define %s %s" % (nm, v)
         for i in self.inits:
             print >>hh, i
+        self.dump_bitmaps(hh)
         self.extras(hh)
 
+    def dump_bitmaps(self, hh):
+        hh.write("struct {\n")
+        hh.write("".join(["  Bitmap %s;\n" % bm[0] for bm in self.bitmaps]))
+        hh.write("} bitmaps = {\n")
+        fmt = " /* %16s */  {{%3d, %3d}, {%3d, %3d}, %#8xUL, %2d, %2d}"
+        hh.write(",\n".join([fmt % bm for bm in self.bitmaps]))
+        hh.write("\n};\n")
+            
     def addall(self):
         pass
     def extras(self, hh):
