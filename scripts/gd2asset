@@ -24,6 +24,8 @@ class GD2Assets(gd2.prep.AssetBin):
 
         if '-f' in opts:
             self.asset_file = opts['-f']
+        if '-3' in opts:
+            self.target_810()
 
         self.handlers = {
             'png' : (self.image, "PNG image file (options: format)"),
@@ -100,12 +102,13 @@ class GD2Assets(gd2.prep.AssetBin):
 if __name__ == '__main__':
     import sys, getopt
     try:
-        optlist, args = getopt.getopt(sys.argv[1:], "o:f:")
+        optlist, args = getopt.getopt(sys.argv[1:], "o:f:3")
     except getopt.GetoptError:
         print 'usage: gd2asset <options> <assets>'
         print
         print '  -o <name>   output header file'
         print '  -f <name>   output asset file (default is header file)'
+        print '  -3          target GD3 (FT810 series)'
         print
         print 'If no output header file is given, then "default_assets.h" is used'
         print

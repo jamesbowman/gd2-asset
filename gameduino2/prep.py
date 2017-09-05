@@ -149,6 +149,16 @@ class AssetBin(gameduino2.base.GD2):
         self.np = None
         self.bitmaps = []
 
+        # Set defaults for FT800. target_810() modifies these
+        self.device = 'GD2'
+        self.maxram = 256 * 1024
+        self.maxhandles = 15
+        
+    def target_810(self):
+        self.device = 'GD3'
+        self.maxram = 1024 * 1024
+        self.maxhandles = 32
+
     def define(self, n, v):
         self.defines.append((self.prefix + n, v))
 
@@ -178,8 +188,8 @@ class AssetBin(gameduino2.base.GD2):
                     scale = 1,
                     rotating = False):
 
-        if 15 <= self.handle:
-            print "Error: too many bitmap handles used, limit is 15"
+        if self.maxhandles <= self.handle:
+            print "Error: too many bitmap handles used, limit is %d" % self.maxhandles
             sys.exit(1)
 
         (w, h) = images[0].size
@@ -433,16 +443,16 @@ class AssetBin(gameduino2.base.GD2):
             name = self.header
         self.name = name
         self.addall()
-        if len(self.alldata) > 0x40000:
-            print "Error: The data (%d bytes) is larger the the GD2 RAM" % len(self.alldata)
+        if len(self.alldata) > self.maxram:
+            print "Error: The data (%d bytes) is larger the the %s RAM (%d)" % (len(self.alldata), self.device, self.maxram)
             sys.exit(1)
         self.defines.append((self.prefix + "ASSETS_END", ul(len(self.alldata))))
         self.cmd_inflate(0)
-        calldata = zlib.compress(self.alldata)
+        calldata = zlib.compress(self.alldata, 9)
         print 'Assets report'
         print '-------------'
         print 'Header file:    %s' % self.header
-        print 'GD2 RAM used:   %d' % len(self.alldata)
+        print '%s RAM used:   %d' % (self.device, len(self.alldata))
         if not self.asset_file:
             print 'Flash used:     %d' % len(calldata)
         else:
@@ -452,16 +462,22 @@ class AssetBin(gameduino2.base.GD2):
         commandblock = self.commands + calldata
 
         hh = open(name, "w")
-        if self.asset_file is None:
-            print >>hh, "static const PROGMEM uint8_t %s__assets[%d] = {" % (self.prefix, len(commandblock))
-            print >>hh, textwrap.fill(", ".join(["%d" % ord(c) for c in commandblock]))
-            print >>hh, "};"
-            print >>hh, "#define %sLOAD_ASSETS()  GD.copy(%s__assets, sizeof(%s__assets))" % (self.prefix, self.prefix, self.prefix)
-        else:
-            open(self.asset_file, "wb").write(commandblock)
-            print >>hh, '#define %sLOAD_ASSETS()  GD.safeload("%s");' % (self.prefix, self.asset_file)
+
         for (nm,v) in self.defines:
             print >>hh, "#define %s %s" % (nm, v)
+
+        p = self.prefix
+
+        if self.asset_file is None:
+            print >>hh, "static const PROGMEM uint8_t %s__assets[%d] = {" % (p, len(commandblock))
+            print >>hh, textwrap.fill(", ".join(["%d" % ord(c) for c in commandblock]))
+            print >>hh, "};"
+            print >>hh, "#define %sLOAD_ASSETS()  (GD.copy(%s__assets, sizeof(%s__assets)), GD.loadptr = %sASSETS_END)" % (p, p, p, p)
+        else:
+            open(self.asset_file, "wb").write(commandblock)
+            print >>hh, '#define %sLOAD_ASSETS()  (GD.safeload("%s"), GD.loadptr = %sASSETS_END)' % (p, self.asset_file, p)
+        print >>hh
+
         for i in self.inits:
             print >>hh, i
         self.dump_bitmaps(hh)
@@ -488,7 +504,7 @@ class ForthAssetBin(AssetBin):
             name = self.header
         self.name = name
         self.addall()
-        if len(self.alldata) > 0x40000:
+        if len(self.alldata) > self.maxram:
             print "Error: The data (%d bytes) is larger the the GD2 RAM" % len(self.alldata)
             sys.exit(1)
         self.defines.append((self.prefix + "ASSETS_END", ul(len(self.alldata))))
