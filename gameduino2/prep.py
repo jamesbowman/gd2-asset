@@ -238,8 +238,6 @@ class AssetBin(gameduino2.base.GD2):
             gd2.ARGB4    : 2 * aw,
             gd2.RGB565   : 2 * aw,
             gd2.PALETTED : aw}[fmt]
-        if fmt == gd2.L2:
-            print w, aw, bpl
         self.BitmapLayout(fmt, bpl, h);
 
         for i,im in enumerate(images):

@@ -78,7 +78,6 @@ def convert(im, dither = False, fmt = ARGB1555):
             return int((3. * dc / 255))
                 
         data = array.array('B', [(64 * to3(a) + 16 * to3(b) + 4 * to3(c) + to3(d)) for (a,b,c,d) in zip(b0, b1, b2, b3)])
-        print data[128*64:129*64]
     elif fmt == L1:
         if dither:
             im = im.convert("1", dither=Image.FLOYDSTEINBERG)
