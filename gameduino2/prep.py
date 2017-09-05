@@ -439,6 +439,8 @@ class AssetBin(gameduino2.base.GD2):
         self.define(name + "_FREQ", freq)
 
     header = None
+    header_intro = ""
+
     def make(self):
         if self.header is None:
             name = self.__class__.__name__.lower() + "_assets.h"
@@ -465,6 +467,8 @@ class AssetBin(gameduino2.base.GD2):
         commandblock = self.commands + calldata
 
         hh = open(name, "w")
+
+        hh.write(self.header_intro)
 
         for (nm,v) in self.defines:
             print >>hh, "#define %s %s" % (nm, v)

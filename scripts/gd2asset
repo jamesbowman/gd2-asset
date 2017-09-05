@@ -16,11 +16,12 @@ def cname(s):
 
 class GD2Assets(gd2.prep.AssetBin):
 
-    def __init__(self, opts, args):
+    def __init__(self, cmdline, opts, args):
         self.opts = opts
         self.args = args
         gd2.prep.AssetBin.__init__(self)
         self.header = opts.get('-o', 'default_assets.h')
+        self.header_intro = "// This file was generated with the command-line:\n//    " + cmdline + "\n\n"
 
         if '-f' in opts:
             self.asset_file = opts['-f']
@@ -133,4 +134,4 @@ if __name__ == '__main__':
     optdict = dict(optlist)
     if 'gd3' in sys.argv[0].lower():
         optdict['-3'] = ''
-    GD2Assets(optdict, args).make()
+    GD2Assets(" ".join(sys.argv), optdict, args).make()
