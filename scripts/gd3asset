@@ -47,7 +47,10 @@ class GD2Assets(gd2.prep.AssetBin):
 
     def image(self, suffix, ff, format = 'ARGB4'):
         name = cname(os.path.basename(ff[0])[:-1 - len(suffix)])
-        self.load_handle(name, [Image.open(f) for f in ff], self.parse_format(format))
+        self.load_handle(name,
+                         [Image.open(f) for f in ff],
+                         self.parse_format(format),
+                         dither = '-d' in self.opts)
 
     def ttf(self, suffix, f, size = '12', format = 'L4'):
         name = cname(os.path.basename(f[0])[:-1 - len(suffix)])
@@ -102,13 +105,14 @@ class GD2Assets(gd2.prep.AssetBin):
 if __name__ == '__main__':
     import sys, getopt
     try:
-        optlist, args = getopt.getopt(sys.argv[1:], "o:f:3")
+        optlist, args = getopt.getopt(sys.argv[1:], "3do:f:")
     except getopt.GetoptError:
         print 'usage: gd2asset <options> <assets>'
         print
-        print '  -o <name>   output header file'
-        print '  -f <name>   output asset file (default is header file)'
         print '  -3          target GD3 (FT810 series)'
+        print '  -d          dither all pixel conversions'
+        print '  -f <name>   output asset file (default is header file)'
+        print '  -o <name>   output header file'
         print
         print 'If no output header file is given, then "default_assets.h" is used'
         print
