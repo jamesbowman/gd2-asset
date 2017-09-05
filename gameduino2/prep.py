@@ -217,17 +217,20 @@ class AssetBin(gameduino2.base.GD2):
         self.inits.append("static const shape_t %s_SHAPE = {%d, %d, %d, %d};" % (name, self.handle, w, h, vsz))
 
         # aw is aligned width
+        # For L1, L2, L4 formats the width must be a whole number of bytes
         if fmt == gd2.L1:
             aw = (w + 7) & ~7
+        elif fmt == gd2.L2:
+            aw = (w + 3) & ~3
         elif fmt == gd2.L4:
             aw = (w + 1) & ~1
         else:
             aw = w
 
-        # print self.name, name, (filter, gd2.BORDER, gd2.BORDER, vw, vh)
         bpl = {
             gd2.ARGB1555 : 2 * aw,
             gd2.L1       : aw / 8,
+            gd2.L2       : aw / 4,
             gd2.L4       : aw / 2,
             gd2.L8       : aw,
             gd2.RGB332   : aw,
@@ -235,6 +238,8 @@ class AssetBin(gameduino2.base.GD2):
             gd2.ARGB4    : 2 * aw,
             gd2.RGB565   : 2 * aw,
             gd2.PALETTED : aw}[fmt]
+        if fmt == gd2.L2:
+            print w, aw, bpl
         self.BitmapLayout(fmt, bpl, h);
 
         for i,im in enumerate(images):

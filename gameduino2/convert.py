@@ -10,6 +10,7 @@ def convert(im, dither = False, fmt = ARGB1555):
     im = im.convert({
         ARGB1555 : "RGBA",
         L1 : "L",
+        L2 : "L",
         L4 : "L",
         L8 : "L",
         RGB332 : "RGB",
@@ -51,10 +52,8 @@ def convert(im, dither = False, fmt = ARGB1555):
         palstr = lut.convert("RGBA").tobytes()
         rgba = zip(*(array.array('B', palstr[i::4]) for i in range(4)))
         data = imbytes(im)
-        totalsz = 8
     elif fmt == L8:
         data = imbytes(im)
-        totalsz = 8
     elif fmt == L4:
         b0 = imbytes(im)[::2]
         b1 = imbytes(im)[1::2]
@@ -66,12 +65,26 @@ def convert(im, dither = False, fmt = ARGB1555):
             return int((15. * dc / 255))
                 
         data = array.array('B', [(16 * to15(l) + to15(r)) for (l,r) in zip(b0, b1)])
-        totalsz = 4
+    elif fmt == L2:
+        b0 = imbytes(im)[::4]
+        b1 = imbytes(im)[1::4]
+        b2 = imbytes(im)[2::4]
+        b3 = imbytes(im)[3::4]
+        def to3(c):
+            if dither:
+                dc = min(255, c + rnd.randrange(64))
+            else:
+                dc = c
+            return int((3. * dc / 255))
+                
+        data = array.array('B', [(64 * to3(a) + 16 * to3(b) + 4 * to3(c) + to3(d)) for (a,b,c,d) in zip(b0, b1, b2, b3)])
+        print data[128*64:129*64]
     elif fmt == L1:
         if dither:
             im = im.convert("1", dither=Image.FLOYDSTEINBERG)
         else:
             im = im.convert("1", dither=Image.NONE)
         data = imbytes(im)
-        totalsz = 1
+    else:
+        assert 0, "Bad format %r" % fmt
     return (im.size, data)
