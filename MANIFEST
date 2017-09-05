@@ -9,3 +9,4 @@ gameduino2/psdparser.py
 gameduino2/registers.py
 gameduino2/remote.py
 scripts/gd2asset
+scripts/gd3asset
