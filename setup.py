@@ -8,5 +8,5 @@ setup(name='gameduino2',
       long_description='Gameduino 2 (http://gameduino.com) is an Arduino video games adapter.  This package contains tools for developers: data preparation, remote control.',
       license='GPL',
       packages=['gameduino2'],
-      scripts=['scripts/gd2asset'],
+      scripts=['scripts/gd2asset', 'scripts/gd3asset'],
 )
