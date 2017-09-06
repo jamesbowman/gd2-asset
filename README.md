@@ -11,4 +11,5 @@ To test run `go`, it should produce:
 
 To install do:
 
-    python setup.py sdist upload
+    python setup.py sdist
+    twine upload dist/*
