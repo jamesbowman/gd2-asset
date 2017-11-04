@@ -258,14 +258,37 @@ class GD2:
     def cmd_setrotate(self, o):
         self.c(struct.pack("II", 0xffffff36, o))
 
+    #
+    # The new 810 opcodes
+    #
+
+    def VertexFormat(self, frac):
+        self.c4((39 << 24) | (((frac) & 7) << 0))
+
+    def BitmapLayoutH(self, linestride,height):
+        self.c4((40 << 24) | (((linestride) & 3) << 2) | (((height) & 3) << 0))
+
+    def BitmapSizeH(self, width,height):
+        self.c4((41 << 24) | (((width) & 3) << 2) | (((height) & 3) << 0))
+
+    def PaletteSource(self, addr):
+        self.c4((42 << 24) | (((addr) & 4194303) << 0))
+
+    def VertexTranslateX(self, x):
+        self.c4((43 << 24) | (((x) & 131071) << 0))
+
+    def VertexTranslateY(self, y):
+        self.c4((44 << 24) | (((y) & 131071) << 0))
+
+    def Nop(self):
+        self.c4((45 << 24))
+
     # def cmd_snapshot2(self, 
     # def cmd_setbase(self, 
     # def cmd_mediafifo(self, 
     # def cmd_playvideo(self, 
     # def cmd_setfont2(self, 
     # def cmd_setscratch(self, 
-    # def cmd_int_ramshared(self, 
-    # def cmd_int_swloadimage(self, 
 
     def cmd_romfont(self, *a):
         self.c(struct.pack("III", 0xffffff3f, *a))

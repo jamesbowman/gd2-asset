@@ -7,12 +7,11 @@ import textwrap
 import wave
 import audioop
 
-import Image
-import ImageFont
-import ImageDraw
+from PIL import Image, ImageFont, ImageDraw, ImageChops
 
 import gameduino2 as gd2
 import gameduino2.convert
+import gameduino2.tmxreader
 from gameduino2.imbytes import imbytes
 
 def stretch(im):
@@ -134,6 +133,22 @@ def preview(np, fmt, size, data):
 
 import gameduino2.base
 
+def pma(im):
+    im = im.convert("RGBA")
+    (r,g,b,a) = im.split()
+    (r,g,b) = [ImageChops.multiply(a, c) for c in (r,g,b)]
+    return Image.merge("RGBA", (r, g, b, a))
+
+class EVE(gameduino2.base.GD2):
+    def __init__(self):
+        self.d = ""
+
+    def c(self, s):
+        self.d += s
+
+def chunker(seq, size):
+    return (seq[pos:pos + size] for pos in xrange(0, len(seq), size))
+
 class AssetBin(gameduino2.base.GD2):
 
     asset_file = None
@@ -194,15 +209,15 @@ class AssetBin(gameduino2.base.GD2):
 
         (w, h) = images[0].size
 
-        self.define("%s_HANDLE" % name, self.handle)
-        name = self.prefix + name
-        self.defines.append(("%s_WIDTH" % name, w))
-        self.defines.append(("%s_HEIGHT" % name, h))
-        self.defines.append(("%s_CELLS" % name, len(images)))
-
         self.align(2)
 
-        self.bitmaps.append((name.lower(), w, h, w / 2, h / 2, len(self.alldata), fmt, self.handle))
+        if name is not None:
+            self.define("%s_HANDLE" % name, self.handle)
+            name = self.prefix + name
+            self.defines.append(("%s_WIDTH" % name, w))
+            self.defines.append(("%s_HEIGHT" % name, h))
+            self.defines.append(("%s_CELLS" % name, len(images)))
+            self.bitmaps.append((name.lower(), w, h, w / 2, h / 2, len(self.alldata), fmt, self.handle))
 
         self.BitmapHandle(self.handle);
         self.BitmapSource(len(self.alldata));
@@ -304,6 +319,90 @@ class AssetBin(gameduino2.base.GD2):
         # imgtools.view(im)
         widths = ([0] * 32) + [w for (w, _) in sizes]
         self.load_font(name, ims, widths, format)
+
+    def load_tiles(self, name, file_name, scale = 1.0):
+        world_map = gameduino2.tmxreader.TileMapParser().parse_decode(file_name)
+
+        # print("loaded map:", world_map.map_file_name)
+
+        x_pixels = world_map.pixel_width
+        y_pixels = world_map.pixel_height
+        # print("map size in pixels:", x_pixels, y_pixels)
+
+        # print("tile size used:",  world_map.tilewidth, world_map.tileheight)
+        # print("tiles used:", world_map.width, world_map.height)
+        # print("found '", len(world_map.layers), "' layers on this map")
+
+        layers = [l for l in world_map.layers if hasattr(l, 'decoded_content')]
+        # print layers
+
+        w,h = (world_map.width, world_map.height)
+
+        ts = world_map.tile_sets[0]
+        tw = int(ts.tilewidth)
+        th = int(ts.tileheight)
+        if scale is not None:
+            stw,sth = (int(tw * scale), int(th * scale))
+        else:
+            stw,sth = tw,th
+
+        used = set()
+        for layer in layers:
+            used |= set(layer.decoded_content)
+        used = sorted(used - set([0]))
+
+        def reindex(i):
+            if i == 0:
+                return None
+            else:
+                return used.index(i)
+
+        def fetchtile(l, i, j):
+            if (i < world_map.width) and (j < world_map.height):
+                return reindex(l.decoded_content[i + (j * world_map.width)])
+            else:
+                return None
+
+        eve = EVE()
+        # print world_map.width * world_map.height * 4
+
+        for j in range(0, world_map.height, 4):
+            for i in range(0, world_map.width, 4):
+                for layer in layers:
+                    for y in range(4):
+                        for x in range(4):
+                            t = fetchtile(layer, i + x, j + y)
+                            if t is not None:
+                                eve.Vertex2ii(stw * x, sth * y, t / 128, t % 128)
+                            else:
+                                eve.Nop()
+        stride = ((w + 3) / 4)
+        self.add(name, struct.pack("6H", w * stw, h * sth, stw * 4, sth * 4, stride, len(layers)) + eve.d)
+        self.tile_files = world_map.tile_sets[0].images[0].source
+        # print 'Size of tiles: %d (compressed %d)' % (len(eve.d), len(zlib.compress(eve.d)))
+        # print 'Tile size', (tw, th)
+        im = pma(Image.open(self.tile_files))
+        def extract(i):
+            w = im.size[0] / 72
+            x = 72 * (i % w)
+            y = 72 * (i / w)
+            return im.crop((x + 0, y + 0, x + 70, y + 70)).resize((32, 32))
+        def extract(i):
+            if hasattr(ts, 'columns'):
+                w = int(ts.columns)
+            else:
+                w = im.size[0] / tw
+            x = ts.margin + (tw + ts.spacing) * (i % w)
+            y = ts.margin + (th + ts.spacing) * (i / w)
+            r = im.crop((x + 0, y + 0, x + tw, y + th))
+            if scale:
+                r = r.resize((stw, sth), Image.ANTIALIAS)
+            return r
+        for i,g128 in enumerate(chunker(used, 128)):
+            # print 'g128', len(g128), g128
+            for j,t in enumerate(g128):
+                extract(t - 1).save("xx_%d_%d.png" % (i, j))
+            self.load_handle(None, [extract(t - 1) for t in g128], gd2.ARGB4, dither=0)
 
     """
     def dxt1(self, imagefile):
