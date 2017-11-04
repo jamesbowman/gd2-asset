@@ -1,0 +1,1 @@
+jpegtran -optimize -copy none -perfect "$1" > "${1%.jpg}o.jpg"
