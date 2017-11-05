@@ -3,6 +3,7 @@
 set -e
 set -x
 sudo pip install Pillow
+ls -ltr /usr/local/lib/python2.7/dist-packages/
 python setup.py build_ext
 sudo python setup.py install
 python unit.py
