@@ -1,5 +1,9 @@
 import unittest
-import Image
+try:
+    import Image
+except ImportError:
+    from PIL import Image
+
 import gameduino2 as gd2
 
 
