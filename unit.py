@@ -1,5 +1,5 @@
 import unittest
-from PIL import Image
+import Image
 import gameduino2 as gd2
 
 
