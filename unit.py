@@ -24,4 +24,6 @@ class TestPreptools(unittest.TestCase):
         self.assert_(p.tostring() == Image.open("testdata/golden-tiledemo.png").tostring())
 
 if __name__ == '__main__':
+    import sys
+    print(sys.version)
     unittest.main()
