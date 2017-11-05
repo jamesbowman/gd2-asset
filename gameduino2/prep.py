@@ -229,7 +229,8 @@ class AssetBin(gameduino2.base.GD2):
             self.define("%s_SIZE" % name, vsz)
             (vw, vh) = (vsz, vsz)
         self.BitmapSize(filter, gd2.BORDER, gd2.BORDER, vw, vh);
-        self.inits.append("static const shape_t %s_SHAPE = {%d, %d, %d, %d};" % (name, self.handle, w, h, vsz))
+        if name is not None:
+            self.inits.append("static const shape_t %s_SHAPE = {%d, %d, %d, %d};" % (name, self.handle, w, h, vsz))
 
         # aw is aligned width
         # For L1, L2, L4 formats the width must be a whole number of bytes
@@ -320,7 +321,7 @@ class AssetBin(gameduino2.base.GD2):
         widths = ([0] * 32) + [w for (w, _) in sizes]
         self.load_font(name, ims, widths, format)
 
-    def load_tiles(self, name, file_name, scale = 1.0):
+    def load_tiles(self, name, file_name, scale = None, preview = False):
         world_map = gameduino2.tmxreader.TileMapParser().parse_decode(file_name)
 
         # print("loaded map:", world_map.map_file_name)
@@ -349,6 +350,7 @@ class AssetBin(gameduino2.base.GD2):
         used = set()
         for layer in layers:
             used |= set(layer.decoded_content)
+        # used = sorted(used)
         used = sorted(used - set([0]))
 
         def reindex(i):
@@ -372,26 +374,27 @@ class AssetBin(gameduino2.base.GD2):
                     for y in range(4):
                         for x in range(4):
                             t = fetchtile(layer, i + x, j + y)
+                            # if i < (480 / 16) and j < (272 / 16): print 16 * (i + x), 16 * (j + y), "tile", t
                             if t is not None:
                                 eve.Vertex2ii(stw * x, sth * y, t / 128, t % 128)
                             else:
                                 eve.Nop()
+        # assert 0
         stride = ((w + 3) / 4)
         self.add(name, struct.pack("6H", w * stw, h * sth, stw * 4, sth * 4, stride, len(layers)) + eve.d)
         self.tile_files = world_map.tile_sets[0].images[0].source
+
         # print 'Size of tiles: %d (compressed %d)' % (len(eve.d), len(zlib.compress(eve.d)))
         # print 'Tile size', (tw, th)
+
         im = pma(Image.open(self.tile_files))
-        def extract(i):
-            w = im.size[0] / 72
-            x = 72 * (i % w)
-            y = 72 * (i / w)
-            return im.crop((x + 0, y + 0, x + 70, y + 70)).resize((32, 32))
         def extract(i):
             if hasattr(ts, 'columns'):
                 w = int(ts.columns)
-            else:
+            elif not hasattr(ts, 'spacing'):
                 w = im.size[0] / tw
+            else:
+                w = (im.size[0] + ts.spacing) / (tw + ts.spacing)
             x = ts.margin + (tw + ts.spacing) * (i % w)
             y = ts.margin + (th + ts.spacing) * (i / w)
             r = im.crop((x + 0, y + 0, x + tw, y + th))
@@ -399,10 +402,16 @@ class AssetBin(gameduino2.base.GD2):
                 r = r.resize((stw, sth), Image.ANTIALIAS)
             return r
         for i,g128 in enumerate(chunker(used, 128)):
-            # print 'g128', len(g128), g128
-            for j,t in enumerate(g128):
-                extract(t - 1).save("xx_%d_%d.png" % (i, j))
             self.load_handle(None, [extract(t - 1) for t in g128], gd2.ARGB4, dither=0)
+
+        if preview:
+            pv = Image.new("RGB", (tw * w, th * h))
+            layer = layers[0]
+            for y in range(pv.size[1] / th):
+                for x in range(pv.size[0] / tw):
+                    t = fetchtile(layer, x, y)
+                    pv.paste(extract(used[t] - 1), (16 * x, 16 * y))
+            return pv
 
     """
     def dxt1(self, imagefile):
