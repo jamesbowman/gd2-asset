@@ -1,6 +1,7 @@
-import Image
 import array
 import random
+
+from PIL import Image
 
 from gameduino2.registers import *
 from gameduino2.imbytes import imbytes

@@ -1,10 +1,10 @@
 import array
 import StringIO
 import zlib
-import Image
 import struct
 import time
 
+from PIL import Image
 import convert
 
 def pad4(s):
