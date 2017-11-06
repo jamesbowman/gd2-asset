@@ -2,6 +2,12 @@
 
 set -e
 set -x
+
+sudo apt-get install libtiff5-dev libjpeg8-dev zlib1g-dev \
+  libfreetype6-dev liblcms2-dev libwebp-dev libharfbuzz-dev libfribidi-dev \
+  tcl8.6-dev tk8.6-dev python-tk \
+  python-dev python-setuptools
+
 sudo pip install Pillow
 ls -ltr /usr/local/lib/python2.7/dist-packages/
 python setup.py build_ext
