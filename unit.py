@@ -1,9 +1,11 @@
-import sys
-print(sys.version)
 import unittest
-from PIL import Image
+import Image
+import ImageChops
 
 import gameduino2 as gd2
+
+def imsame(a, b):
+    return ImageChops.difference(a, b).getbbox() is None
 
 class TestPreptools(unittest.TestCase):
     def test_tile_magicland(self):
@@ -23,7 +25,7 @@ class TestPreptools(unittest.TestCase):
         p = td.preview
         self.assertEqual(p.mode, "RGB")
         self.assertEqual(p.size, (7360, 1200))
-        self.assert_(p.tostring() == Image.open("testdata/golden-tiledemo.png").tostring())
+        self.assert_(imsame(p, Image.open("testdata/golden-tiledemo.png")))
 
 if __name__ == '__main__':
     unittest.main()

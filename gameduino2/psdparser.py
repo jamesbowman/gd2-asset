@@ -18,7 +18,7 @@
 import logging
 import sys
 from struct import unpack, calcsize
-from PIL import Image
+import Image
 
 logger = logging.getLogger(__name__)
 

@@ -7,7 +7,7 @@ import textwrap
 import wave
 import audioop
 
-from PIL import Image, ImageFont, ImageDraw, ImageChops
+import Image, ImageFont, ImageDraw, ImageChops
 
 import gameduino2 as gd2
 import gameduino2.convert

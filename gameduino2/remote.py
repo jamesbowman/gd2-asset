@@ -4,7 +4,7 @@ import zlib
 import struct
 import time
 
-from PIL import Image
+import Image
 import convert
 
 def pad4(s):
