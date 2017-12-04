@@ -8,6 +8,8 @@ import Image
 import wave
 import audioop
 
+formats = ('L1', 'L2', 'L4', 'L8', 'RGB332', 'ARGB2', 'ARGB4', 'RGB565', 'ARGB1555')
+
 def cname(s):
     """ make name s C-friendly """
     for c in "-+.":
@@ -33,12 +35,11 @@ class GD2Assets(gd2.prep.AssetBin):
             'jpg' : (self.image, "JPEG image file (options: format)"),
             'bmp' : (self.image, "BMP image file (options: format)"),
             'gif' : (self.image, "GIF image file (options: format)"),
-            'ttf' : (self.ttf, "TrueType font file (options: format, size)"),
+            'ttf' : (self.ttf, "TrueType font file (options: format, size, topchar)"),
             'wav' : (self.sample, "Audio sample, mono 16-bit (no options)"),
         }
 
     def parse_format(self, format):
-        formats = ('ARGB1555', 'L1', 'L2', 'L4', 'L8', 'RGB332', 'ARGB2', 'ARGB4', 'RGB565')
         if format not in formats:
             print 'ERROR: unknown format "%s"' % format
             print
@@ -53,9 +54,9 @@ class GD2Assets(gd2.prep.AssetBin):
                          self.parse_format(format),
                          dither = '-d' in self.opts)
 
-    def ttf(self, suffix, f, size = '12', format = 'L4'):
+    def ttf(self, suffix, f, size = '12', format = 'L4', topchar = '127'):
         name = cname(os.path.basename(f[0])[:-1 - len(suffix)])
-        self.load_ttf(name, f[0], int(size), self.parse_format(format))
+        self.load_ttf(name, f[0], int(size), self.parse_format(format), int(topchar, 0))
 
     def sample(self, suffix, f):
         name = os.path.basename(f[0])[:-1 - len(suffix)].upper()
@@ -122,6 +123,19 @@ if __name__ == '__main__':
         print '  pic1.png                 image, format ARGB4'
         print '  pic2.jpg,format=L8       image, format L8'
         print '  serif.ttf,size=16        font, 16 pixels high'
+        print
+        print 'Options various file types:'
+        print
+        print 'jpg,png,bmp,gif:'
+        print ' format   ' + ' '.join(formats) + '. Default ARGB4'
+        print
+        print 'ttf'
+        print ' size     height in pixels. Default 12'
+        print ' format   ' + ' '.join(formats) + '. Default ARGB4'
+        print ' topchar  maximum ASCII code encoded. Default 127'
+        print
+        print 'wav'
+        print ' (no options)'
         print
         print 'The assets are compiled into flash, or if the "-f" option is given'
         print 'into a file. In this case the file should be copied to the'
