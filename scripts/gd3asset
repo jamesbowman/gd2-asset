@@ -110,8 +110,9 @@ if __name__ == '__main__':
         optlist, args = getopt.getopt(sys.argv[1:], "3do:f:")
     except getopt.GetoptError:
         print 'usage: gd2asset <options> <assets>'
+        print '       gd3asset <options> <assets>'
         print
-        print '  -3          target GD3 (FT810 series)'
+        print '  -3          target GD3 (FT810 series) - set by gd3asset'
         print '  -d          dither all pixel conversions'
         print '  -f <name>   output asset file (default is header file)'
         print '  -o <name>   output header file'
