@@ -6,6 +6,7 @@ import zlib
 import textwrap
 import wave
 import audioop
+import xml.etree.ElementTree as ET
 
 import Image, ImageFont, ImageDraw, ImageChops
 
@@ -77,6 +78,12 @@ def extents(im):
 
 def ul(x):
     return str(x) + "UL"
+
+def cname(s):
+    """ make name s C-friendly """
+    for c in "-+.":
+        s = s.replace(c, "_")
+    return s.upper()
 
 def preview(np, fmt, size, data):
 
@@ -197,6 +204,32 @@ class AssetBin(gameduino2.base.GD2):
         while (len(self.alldata) % n) != 0:
             self.alldata += chr(0)
 
+    def load_bitmap(self, im, fmt, dither = False):
+        (w, h) = im.size
+
+        self.align(2)
+
+        # aw is aligned width
+        # For L1, L2, L4 formats the width must be a whole number of bytes
+        if fmt == gd2.L1:
+            aw = (w + 7) & ~7
+        elif fmt == gd2.L2:
+            aw = (w + 3) & ~3
+        elif fmt == gd2.L4:
+            aw = (w + 1) & ~1
+        else:
+            aw = w
+
+        if aw != w:
+            im = setwidth(im, aw)
+        if hasattr(im, "imgdata"):
+            imgdata = im.imgdata
+        else:
+            (_, imgdata) = gameduino2.convert.convert(im, dither, fmt = fmt)
+        r = len(self.alldata)
+        self.alldata += imgdata.tostring()
+        return r
+
     def load_handle(self, name, images, fmt,
                     dither = False,
                     filter = gd2.NEAREST,
@@ -295,30 +328,29 @@ class AssetBin(gameduino2.base.GD2):
         self.alldata += dblock
         self.cmd_setfont(h, p1);
 
-    def load_ttf(self, name, ttfname, size, format):
+    def load_ttf(self, name, ttfname, size, format, topchar = 127):
         font = ImageFont.truetype(ttfname, size)
-        sizes = [font.getsize(chr(c)) for c in range(32, 128)]
-        fw = max([w for (w, _) in sizes])
-        fh = max([h for (_, h) in sizes])
-        # print fw, fh
+        rr = range(32, topchar + 1)
+        sizes = {c:font.getsize(chr(c)) for c in rr}
+        fw = max([w for (w, _) in sizes.values()])
+        fh = max([h for (_, h) in sizes.values()])
         alle = {}
-        for i in range(1, 96):
+        for i in rr:
             im = Image.new("L", (fw+8, fh))
             dr = ImageDraw.Draw(im)
-            dr.text((8,0), chr(32 + i), font=font, fill=255)
+            dr.text((8,0), chr(i), font=font, fill=255)
             alle[i] = gd2.prep.extents(im)
 
         fw = max([(x1 - x0) for (x0, y0, x1, y1) in alle.values()])
-        ims = ([None] * 32) + [Image.new("L", (fw, fh)) for i in range(32, 128)]
-        for i in range(33, 127):
+        ims = ([None] * 32) + [Image.new("L", (fw, fh)) for i in rr]
+        for i in range(33, topchar):
             dr = ImageDraw.Draw(ims[i])
-            (x0, y0, x1, y1) = alle[i - 32]
+            (x0, y0, x1, y1) = alle[i]
             x = max(0, 8 - x0)
             if x > 0:
-                sizes[i - 32] = (sizes[i - 32][0] - x, sizes[i - 32][1])
+                sizes[i] = (sizes[i][0] - x, sizes[i][1])
             dr.text((x, 0), chr(i), font=font, fill=255)
-        # imgtools.view(im)
-        widths = ([0] * 32) + [w for (w, _) in sizes]
+        widths = [sizes.get(c, (0,0))[0] for c in range(128)]
         self.load_font(name, ims, widths, format)
 
     def load_tiles(self, name, file_name, scale = None, preview = False):
@@ -335,7 +367,6 @@ class AssetBin(gameduino2.base.GD2):
         # print("found '", len(world_map.layers), "' layers on this map")
 
         layers = [l for l in world_map.layers if hasattr(l, 'decoded_content')]
-        # print layers
 
         w,h = (world_map.width, world_map.height)
 
@@ -412,6 +443,30 @@ class AssetBin(gameduino2.base.GD2):
                     t = fetchtile(layer, x, y)
                     pv.paste(extract(used[t] - 1), (16 * x, 16 * y))
             return pv
+
+    def load_atlas(self, file_name, scale = None):
+        tree = ET.parse(file_name)
+        root = tree.getroot()
+        if root.tag == 'TextureAtlas':
+            imagepath = root.attrib['imagePath']
+            im = Image.open(imagepath)
+            fmt = gd2.ARGB4
+            for child in root.iter('SubTexture'):
+                a = child.attrib
+                print a
+                (x, y, width, height) = [int(a[n]) for n in ["x", "y", "width", "height"]]
+                sub = im.crop((x, y, x + width, y + height))
+                if scale is not None:
+                    width = int(width * scale)
+                    height = int(height * scale)
+                    sub = sub.resize((width, height), Image.ANTIALIAS)
+                src = self.load_bitmap(sub, fmt)
+                nm = a['name']
+                nm = nm.replace('.png', '')
+                lp = len(self.alldata)
+                self.inits.append("#define atlas_%s __fromatlas(%s)" % (nm, ul(lp)))
+                self.alldata += struct.pack("HHHHIB", width, height, width / 2, height / 2, src, fmt)
+                sub.save("%s.png" % nm)
 
     """
     def dxt1(self, imagefile):
