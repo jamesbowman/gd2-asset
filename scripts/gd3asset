@@ -36,6 +36,7 @@ class GD2Assets(gd2.prep.AssetBin):
             'bmp' : (self.image, "BMP image file (options: format)"),
             'gif' : (self.image, "GIF image file (options: format)"),
             'ttf' : (self.ttf, "TrueType font file (options: format, size, topchar)"),
+            'otf' : (self.ttf, "OpenType font file (options: format, size, topchar)"),
             'wav' : (self.sample, "Audio sample, mono 16-bit (no options)"),
         }
 
@@ -130,7 +131,7 @@ if __name__ == '__main__':
         print 'jpg,png,bmp,gif:'
         print ' format   ' + ' '.join(formats) + '. Default ARGB4'
         print
-        print 'ttf'
+        print 'ttf,otf'
         print ' size     height in pixels. Default 12'
         print ' format   ' + ' '.join(formats) + '. Default ARGB4'
         print ' topchar  maximum ASCII code encoded. Default 127'
