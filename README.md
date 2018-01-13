@@ -6,7 +6,7 @@ usage:
     gd2asset <options> <assets>
     gd3asset <options> <assets>
 
-      -3          target GD3 (FT810 series)
+      -3          target GD3 (FT810 series) - set by gd3asset
       -d          dither all pixel conversions
       -f <name>   output asset file (default is header file)
       -o <name>   output header file
@@ -19,12 +19,12 @@ usage:
       pic2.jpg,format=L8       image, format L8
       serif.ttf,size=16        font, 16 pixels high
 
-    Options various file types:
+    Options for the file types:
 
     jpg,png,bmp,gif:
      format   L1 L2 L4 L8 RGB332 ARGB2 ARGB4 RGB565 ARGB1555. Default ARGB4
 
-    ttf
+    ttf,otf
      size     height in pixels. Default 12
      format   L1 L2 L4 L8 RGB332 ARGB2 ARGB4 RGB565 ARGB1555. Default ARGB4
      topchar  maximum ASCII code encoded. Default 127
