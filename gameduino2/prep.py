@@ -252,8 +252,8 @@ class AssetBin(gameduino2.base.GD2):
             self.defines.append(("%s_CELLS" % name, len(images)))
             self.bitmaps.append((name.lower(), w, h, w / 2, h / 2, len(self.alldata), fmt, self.handle))
 
-        self.BitmapHandle(self.handle);
-        self.BitmapSource(len(self.alldata));
+        self.BitmapHandle(self.handle)
+        self.BitmapSource(len(self.alldata))
         if not rotating:
             (vw, vh) = (scale * w, scale * h)
             vsz = 0
@@ -261,7 +261,9 @@ class AssetBin(gameduino2.base.GD2):
             vsz = int(scale * max(w, h))
             self.define("%s_SIZE" % name, vsz)
             (vw, vh) = (vsz, vsz)
-        self.BitmapSize(filter, gd2.BORDER, gd2.BORDER, vw, vh);
+        self.BitmapSize(filter, gd2.BORDER, gd2.BORDER, vw, vh)
+        if self.device == 'GD3':
+            self.BitmapSizeH(vw >> 9, vh >> 9)
         if name is not None:
             self.inits.append("static const shape_t %s_SHAPE = {%d, %d, %d, %d};" % (name, self.handle, w, h, vsz))
 
@@ -287,7 +289,9 @@ class AssetBin(gameduino2.base.GD2):
             gd2.ARGB4    : 2 * aw,
             gd2.RGB565   : 2 * aw,
             gd2.PALETTED : aw}[fmt]
-        self.BitmapLayout(fmt, bpl, h);
+        self.BitmapLayout(fmt, bpl, h)
+        if self.device == 'GD3':
+            self.BitmapLayoutH(bpl >> 10, h >> 9)
 
         for i,im in enumerate(images):
             if aw != w:
@@ -322,11 +326,11 @@ class AssetBin(gameduino2.base.GD2):
         onechar = (p1 - p0) / len(tims)
         # print name, 'font requires', (p1 - p0), 'bytes'
         sz = ims[trim0].size
-        self.BitmapSource(p0 - (onechar * trim0));
+        self.BitmapSource(p0 - (onechar * trim0))
         widths = [max(0, w) for w in widths]
         dblock = array.array('B', widths).tostring() + struct.pack("<5i", fmt, 1, sz[0], sz[1], p0 - (onechar * trim0))
         self.alldata += dblock
-        self.cmd_setfont(h, p1);
+        self.cmd_setfont(h, p1)
 
     def load_ttf(self, name, ttfname, size, format, topchar = 127):
         font = ImageFont.truetype(ttfname, size)
@@ -489,10 +493,10 @@ class AssetBin(gameduino2.base.GD2):
             return Image.merge("RGB", [Image.fromarray(c.astype(numpy.uint8).reshape(*sz)) for c in rgb(cs)])
         def morton1(x):
             v = x & 0x55555555
-            v = (v | (v >> 1)) & 0x33333333;
-            v = (v | (v >> 2)) & 0x0F0F0F0F;
-            v = (v | (v >> 4)) & 0x00FF00FF;
-            v = (v | (v >> 8)) & 0x0000FFFF;
+            v = (v | (v >> 1)) & 0x33333333
+            v = (v | (v >> 2)) & 0x0F0F0F0F
+            v = (v | (v >> 4)) & 0x00FF00FF
+            v = (v | (v >> 8)) & 0x0000FFFF
             return v.astype(numpy.uint16)
 
         h = open(dxt)
