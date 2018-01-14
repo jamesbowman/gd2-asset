@@ -334,22 +334,21 @@ class AssetBin(gameduino2.base.GD2):
         sizes = {c:font.getsize(chr(c)) for c in rr}
         fw = max([w for (w, _) in sizes.values()])
         fh = max([h for (_, h) in sizes.values()])
-        alle = {}
-        for i in rr:
-            im = Image.new("L", (fw+8, fh))
-            dr = ImageDraw.Draw(im)
-            dr.text((8,0), chr(i), font=font, fill=255)
-            alle[i] = gd2.prep.extents(im)
 
-        fw = max([(x1 - x0) for (x0, y0, x1, y1) in alle.values()])
-        ims = ([None] * 32) + [Image.new("L", (fw, fh)) for i in rr]
-        for i in range(33, topchar):
-            dr = ImageDraw.Draw(ims[i])
-            (x0, y0, x1, y1) = alle[i]
-            x = max(0, 8 - x0)
-            if x > 0:
-                sizes[i] = (sizes[i][0] - x, sizes[i][1])
-            dr.text((x, 0), chr(i), font=font, fill=255)
+        # Determine true pixel extents of all characters
+        im = Image.new("L", (fw+16, fh+16))
+        dr = ImageDraw.Draw(im)
+        for i in rr:
+            dr.text((8,8), chr(i), font=font, fill=255)
+        alle = gd2.prep.extents(im)
+
+        # render and crop the characters to the extents
+        ims = [None] * 32
+        for i in rr:
+            im = Image.new("L", (fw+16, fh+16))
+            dr = ImageDraw.Draw(im)
+            dr.text((8, 8), chr(i), font=font, fill=255)
+            ims.append(im.crop(alle))
         widths = [sizes.get(c, (0,0))[0] for c in range(128)]
         self.load_font(name, ims, widths, format)
 
