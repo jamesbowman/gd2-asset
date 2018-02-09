@@ -15,6 +15,11 @@ import gameduino2.convert
 import gameduino2.tmxreader
 from gameduino2.imbytes import imbytes
 
+def pad4(s):
+    while len(s) % 4:
+        s += chr(0)
+    return s
+
 def stretch(im):
     d = imbytes(im)
     # print min(d), max(d)
@@ -626,17 +631,17 @@ class AssetBin(gameduino2.base.GD2):
         self.defines.append((self.prefix + "ASSETS_END", ul(len(self.alldata))))
         self.cmd_inflate(0)
         calldata = zlib.compress(self.alldata, 9)
+        commandblock = self.commands + pad4(calldata)
+
         print 'Assets report'
         print '-------------'
         print 'Header file:    %s' % self.header
         print '%s RAM used:   %d' % (self.device, len(self.alldata))
         if not self.asset_file:
-            print 'Flash used:     %d' % len(calldata)
+            print 'Flash used:     %d' % len(commandblock)
         else:
             print 'Output file:    %s' % self.asset_file
             print 'File size:      %d' % len(calldata)
-
-        commandblock = self.commands + calldata
 
         hh = open(name, "w")
 
