@@ -15,6 +15,11 @@ import gameduino2.convert
 import gameduino2.tmxreader
 from gameduino2.imbytes import imbytes
 
+def pad4(s):
+    while len(s) % 4:
+        s += chr(0)
+    return s
+
 def stretch(im):
     d = imbytes(im)
     # print min(d), max(d)
@@ -49,7 +54,13 @@ def join(tiles):
     return o
 
 def setwidth(im, w):
-    e = Image.new(im.mode, (w, im.size[1]))
+    e = im.resize((w, im.size[1]))
+    nch = len(e.mode)
+    if nch == 1:
+        black = 0
+    else:
+        black = (0,) * nch
+    e.paste(black, (0, 0, e.size[0], e.size[1]))
     e.paste(im, (0, 0))
     return e
 
@@ -252,8 +263,8 @@ class AssetBin(gameduino2.base.GD2):
             self.defines.append(("%s_CELLS" % name, len(images)))
             self.bitmaps.append((name.lower(), w, h, w / 2, h / 2, len(self.alldata), fmt, self.handle))
 
-        self.BitmapHandle(self.handle);
-        self.BitmapSource(len(self.alldata));
+        self.BitmapHandle(self.handle)
+        self.BitmapSource(len(self.alldata))
         if not rotating:
             (vw, vh) = (scale * w, scale * h)
             vsz = 0
@@ -261,7 +272,9 @@ class AssetBin(gameduino2.base.GD2):
             vsz = int(scale * max(w, h))
             self.define("%s_SIZE" % name, vsz)
             (vw, vh) = (vsz, vsz)
-        self.BitmapSize(filter, gd2.BORDER, gd2.BORDER, vw, vh);
+        self.BitmapSize(filter, gd2.BORDER, gd2.BORDER, vw, vh)
+        if self.device == 'GD3':
+            self.BitmapSizeH(vw >> 9, vh >> 9)
         if name is not None:
             self.inits.append("static const shape_t %s_SHAPE = {%d, %d, %d, %d};" % (name, self.handle, w, h, vsz))
 
@@ -287,7 +300,9 @@ class AssetBin(gameduino2.base.GD2):
             gd2.ARGB4    : 2 * aw,
             gd2.RGB565   : 2 * aw,
             gd2.PALETTED : aw}[fmt]
-        self.BitmapLayout(fmt, bpl, h);
+        self.BitmapLayout(fmt, bpl, h)
+        if self.device == 'GD3':
+            self.BitmapLayoutH(bpl >> 10, h >> 9)
 
         for i,im in enumerate(images):
             if aw != w:
@@ -322,15 +337,15 @@ class AssetBin(gameduino2.base.GD2):
         onechar = (p1 - p0) / len(tims)
         # print name, 'font requires', (p1 - p0), 'bytes'
         sz = ims[trim0].size
-        self.BitmapSource(p0 - (onechar * trim0));
+        self.BitmapSource(p0 - (onechar * trim0))
         widths = [max(0, w) for w in widths]
         dblock = array.array('B', widths).tostring() + struct.pack("<5i", fmt, 1, sz[0], sz[1], p0 - (onechar * trim0))
         self.alldata += dblock
-        self.cmd_setfont(h, p1);
+        self.cmd_setfont(h, p1)
 
-    def load_ttf(self, name, ttfname, size, format, topchar = 127):
+    def load_ttf(self, name, ttfname, size, format, botchar = 32, topchar = 127):
         font = ImageFont.truetype(ttfname, size)
-        rr = range(32, topchar + 1)
+        rr = range(botchar, topchar + 1)
         sizes = {c:font.getsize(chr(c)) for c in rr}
         fw = max([w for (w, _) in sizes.values()])
         fh = max([h for (_, h) in sizes.values()])
@@ -343,7 +358,7 @@ class AssetBin(gameduino2.base.GD2):
         alle = gd2.prep.extents(im)
 
         # render and crop the characters to the extents
-        ims = [None] * 32
+        ims = [None] * botchar
         for i in rr:
             im = Image.new("L", (fw+16, fh+16))
             dr = ImageDraw.Draw(im)
@@ -452,7 +467,7 @@ class AssetBin(gameduino2.base.GD2):
             fmt = gd2.ARGB4
             for child in root.iter('SubTexture'):
                 a = child.attrib
-                print a
+                # print a
                 (x, y, width, height) = [int(a[n]) for n in ["x", "y", "width", "height"]]
                 sub = im.crop((x, y, x + width, y + height))
                 if scale is not None:
@@ -488,10 +503,10 @@ class AssetBin(gameduino2.base.GD2):
             return Image.merge("RGB", [Image.fromarray(c.astype(numpy.uint8).reshape(*sz)) for c in rgb(cs)])
         def morton1(x):
             v = x & 0x55555555
-            v = (v | (v >> 1)) & 0x33333333;
-            v = (v | (v >> 2)) & 0x0F0F0F0F;
-            v = (v | (v >> 4)) & 0x00FF00FF;
-            v = (v | (v >> 8)) & 0x0000FFFF;
+            v = (v | (v >> 1)) & 0x33333333
+            v = (v | (v >> 2)) & 0x0F0F0F0F
+            v = (v | (v >> 4)) & 0x00FF00FF
+            v = (v | (v >> 8)) & 0x0000FFFF
             return v.astype(numpy.uint16)
 
         h = open(dxt)
@@ -616,17 +631,17 @@ class AssetBin(gameduino2.base.GD2):
         self.defines.append((self.prefix + "ASSETS_END", ul(len(self.alldata))))
         self.cmd_inflate(0)
         calldata = zlib.compress(self.alldata, 9)
+        commandblock = self.commands + pad4(calldata)
+
         print 'Assets report'
         print '-------------'
         print 'Header file:    %s' % self.header
         print '%s RAM used:   %d' % (self.device, len(self.alldata))
         if not self.asset_file:
-            print 'Flash used:     %d' % len(calldata)
+            print 'Flash used:     %d' % len(commandblock)
         else:
             print 'Output file:    %s' % self.asset_file
             print 'File size:      %d' % len(calldata)
-
-        commandblock = self.commands + calldata
 
         hh = open(name, "w")
 
