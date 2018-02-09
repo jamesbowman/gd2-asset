@@ -1,6 +1,8 @@
 # Usage:
-# ./video-convert2 <inputfile>
-# Writes out.avi
+#
+#   ./video-convert2 <inputfile>
+#
+# The converted video is written to "out.avi"
 #
 # Depends on:
 #   sudo apt-get install libjpeg-turbo-progs libav-tools
@@ -8,6 +10,9 @@
 set -e
 
 TMP=tmp
+
+mkdir -p $TMP
+rm -rf $TMP/*
 
 tput clear
 
