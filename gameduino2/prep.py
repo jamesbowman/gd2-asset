@@ -49,7 +49,13 @@ def join(tiles):
     return o
 
 def setwidth(im, w):
-    e = Image.new(im.mode, (w, im.size[1]))
+    e = im.resize((w, im.size[1]))
+    nch = len(e.mode)
+    if nch == 1:
+        black = 0
+    else:
+        black = (0,) * nch
+    e.paste(black, (0, 0, e.size[0], e.size[1]))
     e.paste(im, (0, 0))
     return e
 
@@ -332,9 +338,9 @@ class AssetBin(gameduino2.base.GD2):
         self.alldata += dblock
         self.cmd_setfont(h, p1)
 
-    def load_ttf(self, name, ttfname, size, format, topchar = 127):
+    def load_ttf(self, name, ttfname, size, format, botchar = 32, topchar = 127):
         font = ImageFont.truetype(ttfname, size)
-        rr = range(32, topchar + 1)
+        rr = range(botchar, topchar + 1)
         sizes = {c:font.getsize(chr(c)) for c in rr}
         fw = max([w for (w, _) in sizes.values()])
         fh = max([h for (_, h) in sizes.values()])
@@ -347,7 +353,7 @@ class AssetBin(gameduino2.base.GD2):
         alle = gd2.prep.extents(im)
 
         # render and crop the characters to the extents
-        ims = [None] * 32
+        ims = [None] * botchar
         for i in rr:
             im = Image.new("L", (fw+16, fh+16))
             dr = ImageDraw.Draw(im)
@@ -456,7 +462,7 @@ class AssetBin(gameduino2.base.GD2):
             fmt = gd2.ARGB4
             for child in root.iter('SubTexture'):
                 a = child.attrib
-                print a
+                # print a
                 (x, y, width, height) = [int(a[n]) for n in ["x", "y", "width", "height"]]
                 sub = im.crop((x, y, x + width, y + height))
                 if scale is not None:
