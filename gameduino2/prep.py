@@ -343,9 +343,13 @@ class AssetBin(gameduino2.base.GD2):
         self.alldata += dblock
         self.cmd_setfont(h, p1)
 
-    def load_ttf(self, name, ttfname, size, format, botchar = 32, topchar = 127):
+    def load_ttf(self, name, ttfname, size, format, botchar = 32, topchar = 127, charset = None):
         font = ImageFont.truetype(ttfname, size)
-        rr = range(botchar, topchar + 1)
+        if charset is not None:
+            topchar = botchar + len(charset)
+            rr = [ord(c) for c in charset]
+        else:
+            rr = range(botchar, topchar + 1)
         sizes = {c:font.getsize(chr(c)) for c in rr}
         fw = max([w for (w, _) in sizes.values()])
         fh = max([h for (_, h) in sizes.values()])
@@ -365,6 +369,9 @@ class AssetBin(gameduino2.base.GD2):
             dr.text((8, 8), chr(i), font=font, fill=255)
             ims.append(im.crop(alle))
         widths = [sizes.get(c, (0,0))[0] for c in range(128)]
+        if charset is not None:
+            for i,c in enumerate(charset):
+                widths[botchar + i] = sizes.get(ord(c), (0,0))[0]
         self.load_font(name, ims, widths, format)
 
     def load_tiles(self, name, file_name, scale = None, preview = False):
