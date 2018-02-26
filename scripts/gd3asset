@@ -55,10 +55,10 @@ class GD2Assets(gd2.prep.AssetBin):
                          self.parse_format(format),
                          dither = '-d' in self.opts)
 
-    def ttf(self, suffix, f, size = '12', format = 'L4', botchar = '32', topchar = '127', charset = None):
+    def ttf(self, suffix, f, size = '12', format = 'L4', firstchar = '32', topchar = '127', charset = None):
         name = cname(os.path.basename(f[0])[:-1 - len(suffix)])
         self.load_ttf(name, f[0], int(size), self.parse_format(format),
-                      botchar = int(botchar, 0),
+                      firstchar = int(firstchar, 0),
                       topchar = int(topchar, 0),
                       charset = charset)
 
