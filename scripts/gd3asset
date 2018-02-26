@@ -35,8 +35,8 @@ class GD2Assets(gd2.prep.AssetBin):
             'jpg' : (self.image, "JPEG image file (options: format)"),
             'bmp' : (self.image, "BMP image file (options: format)"),
             'gif' : (self.image, "GIF image file (options: format)"),
-            'ttf' : (self.ttf, "TrueType font file (options: format, size, botchar, charset, topchar)"),
-            'otf' : (self.ttf, "OpenType font file (options: format, size, botchar, charset, topchar)"),
+            'ttf' : (self.ttf, "TrueType font file (options: format, size, firstchar, charset, topchar)"),
+            'otf' : (self.ttf, "OpenType font file (options: format, size, firstchar, charset, topchar)"),
             'wav' : (self.sample, "Audio sample, mono 16-bit (no options)"),
         }
 
@@ -137,7 +137,9 @@ if __name__ == '__main__':
         print 'ttf,otf'
         print ' size     height in pixels. Default 12'
         print ' format   ' + ' '.join(formats) + '. Default ARGB4'
+        print ' firstchar  first ASCII code encoded. Default 32'
         print ' topchar  maximum ASCII code encoded. Default 127'
+        print ' charset  set of characters to encode (overrides topchar)'
         print
         print 'wav'
         print ' (no options)'
