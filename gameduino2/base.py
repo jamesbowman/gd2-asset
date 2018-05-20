@@ -255,9 +255,6 @@ class GD2:
     def cmd_translatef(self, tx, ty):
         self.cmd_translate(int(65536 * tx), int(65536 * ty))
 
-    def cmd_setrotate(self, o):
-        self.c(struct.pack("II", 0xffffff36, o))
-
     #
     # The new 810 opcodes
     #
@@ -283,17 +280,36 @@ class GD2:
     def Nop(self):
         self.c4((45 << 24))
 
+    #
+    # The new 810 commands
+    #
+
+    def cmd_romfont(self, dst, src):
+        self.c(struct.pack("III", 0xffffff3f, dst, src))
+
+    def cmd_mediafifo(self, ptr, size):
+        self.c(struct.pack("III", 0xffffff39, ptr, size))
+
+    def cmd_sync(self):
+        self.c(struct.pack("I", 0xffffff42))
+
+    def cmd_setrotate(self, o):
+        self.c(struct.pack("II", 0xffffff36, o))
+
+    def cmd_setbitmap(self, source, fmt, w, h):
+        self.c(struct.pack("IIhhhh", 0xffffff43, source, fmt, w, h, 0))
+
     # def cmd_snapshot2(self, 
     # def cmd_setbase(self, 
-    # def cmd_mediafifo(self, 
     # def cmd_playvideo(self, 
     # def cmd_setfont2(self, 
     # def cmd_setscratch(self, 
-
-    def cmd_romfont(self, *a):
-        self.c(struct.pack("III", 0xffffff3f, *a))
-
     # def cmd_videostart(self, 
     # def cmd_videoframe(self, 
     # def cmd_sync(self, 
     # def cmd_setbitmap(self, 
+
+    def swap(self):
+        self.Display()
+        self.cmd_swap()
+        self.cmd_dlstart()
