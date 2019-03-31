@@ -1,8 +1,11 @@
+import sys
 import array
 import StringIO
 import zlib
 import struct
 import time
+
+PYTHON2 = (sys.version_info < (3, 0))
 
 import Image
 import convert
@@ -85,7 +88,7 @@ class GD2(gameduino2.base.GD2):
         while True:
             rp = self.rd16(reg.REG_CMD_READ)
             if rp & 3:
-                raise GD2Exception, "At address %04X" % self.rd32(reg.RAM_CMD)
+                raise GD2Exception("At address %04X" % self.rd32(reg.RAM_CMD))
             fullness = (self.wp - rp) & 4095
             available = 4096 - 4 - fullness
             if min(1000, len(cmd)) <= available:
@@ -141,6 +144,4 @@ class GD2(gameduino2.base.GD2):
     def zload(self, dst, data):
         self.cmd_inflate(dst)
         c = zlib.compress(data)
-        print len(data), len(c)
         self.c(pad4(c))
-

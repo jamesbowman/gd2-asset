@@ -27,6 +27,9 @@ PALETTED             = 8
 TEXT8X8              = 9
 TEXTVGA              = 10
 BARGRAPH             = 11
+PALETTED565          = 14   # FT810
+PALETTED4444         = 15   # FT810
+PALETTED8            = 16   # FT810
 L2                   = 17   # FT810
 
 NEAREST              = 0

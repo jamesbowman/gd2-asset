@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import sys
 import array
@@ -8,12 +9,14 @@ import wave
 import audioop
 import xml.etree.ElementTree as ET
 
-import Image, ImageFont, ImageDraw, ImageChops
+from PIL import Image, ImageFont, ImageDraw, ImageChops
 
-import gameduino2 as gd2
+import gameduino2.registers as gd2
 import gameduino2.convert
 import gameduino2.tmxreader
 from gameduino2.imbytes import imbytes
+
+PYTHON2 = (sys.version_info < (3, 0))
 
 def pad4(s):
     while len(s) % 4:
@@ -24,7 +27,7 @@ def stretch(im):
     d = imbytes(im)
     # print min(d), max(d)
     r = max(d) - min(d)
-    return im.point(lambda x: (x - min(d)) * 255 / r)
+    return im.point(lambda x: (x - min(d)) * 255 // r)
 
 def getalpha(im):
     return im.split()[3]
@@ -174,8 +177,8 @@ class AssetBin(gameduino2.base.GD2):
     previews = False
 
     def __init__(self):
-        self.alldata = ""
-        self.commands = ""
+        self.alldata = b""
+        self.commands = b""
         self.defines = []
         self.inits = []
         self.handle = 0
@@ -213,9 +216,9 @@ class AssetBin(gameduino2.base.GD2):
 
     def align(self, n):
         while (len(self.alldata) % n) != 0:
-            self.alldata += chr(0)
+            self.alldata += b'\x00'
 
-    def load_bitmap(self, im, fmt, dither = False):
+    def load_internal(self, im, fmt, dither = False):
         (w, h) = im.size
 
         self.align(2)
@@ -239,7 +242,12 @@ class AssetBin(gameduino2.base.GD2):
             (_, imgdata) = gameduino2.convert.convert(im, dither, fmt = fmt)
         r = len(self.alldata)
         self.alldata += imgdata.tostring()
-        return r
+        return (im, r)
+
+    def load_bitmap(self, name, im, fmt, dither = False):
+        (im,r) = self.load_internal(im, fmt, dither)
+        (w, h) = im.size
+        self.bitmaps.append((name.lower(), w, h, w // 2, h // 2, r, fmt, -1))
 
     def load_handle(self, name, images, fmt,
                     dither = False,
@@ -248,7 +256,7 @@ class AssetBin(gameduino2.base.GD2):
                     rotating = False):
 
         if self.maxhandles <= self.handle:
-            print "Error: too many bitmap handles used, limit is %d" % self.maxhandles
+            print("Error: too many bitmap handles used, limit is %d" % self.maxhandles)
             sys.exit(1)
 
         (w, h) = images[0].size
@@ -261,7 +269,7 @@ class AssetBin(gameduino2.base.GD2):
             self.defines.append(("%s_WIDTH" % name, w))
             self.defines.append(("%s_HEIGHT" % name, h))
             self.defines.append(("%s_CELLS" % name, len(images)))
-            self.bitmaps.append((name.lower(), w, h, w / 2, h / 2, len(self.alldata), fmt, self.handle))
+            self.bitmaps.append((name.lower(), w, h, w // 2, h // 2, len(self.alldata), fmt, self.handle))
 
         self.BitmapHandle(self.handle)
         self.BitmapSource(len(self.alldata))
@@ -291,9 +299,9 @@ class AssetBin(gameduino2.base.GD2):
 
         bpl = {
             gd2.ARGB1555 : 2 * aw,
-            gd2.L1       : aw / 8,
-            gd2.L2       : aw / 4,
-            gd2.L4       : aw / 2,
+            gd2.L1       : aw // 8,
+            gd2.L2       : aw // 4,
+            gd2.L4       : aw // 2,
             gd2.L8       : aw,
             gd2.RGB332   : aw,
             gd2.ARGB2    : aw,
@@ -318,7 +326,7 @@ class AssetBin(gameduino2.base.GD2):
                     self.np = numpy
                 preview(self.np, fmt, im.size, imgdata).save("previews/%s-%s-%02d.png" % (self.name, name, i))
             """
-            self.alldata += imgdata.tostring()
+            self.alldata += imgdata.tobytes()
 
         self.handle += 1
 
@@ -334,12 +342,13 @@ class AssetBin(gameduino2.base.GD2):
         self.align(4)
         p1 = len(self.alldata)
         # Compute memory required by one char
-        onechar = (p1 - p0) / len(tims)
+        onechar = (p1 - p0) // len(tims)
         # print name, 'font requires', (p1 - p0), 'bytes'
         sz = ims[trim0].size
+        stride = onechar // sz[1]
         self.BitmapSource(p0 - (onechar * trim0))
         widths = [max(0, w) for w in widths]
-        dblock = array.array('B', widths).tostring() + struct.pack("<5i", fmt, 1, sz[0], sz[1], p0 - (onechar * trim0))
+        dblock = array.array('B', widths).tostring() + struct.pack("<5i", fmt, stride, sz[0], sz[1], p0 - (onechar * trim0))
         self.alldata += dblock
         self.cmd_setfont(h, p1)
 
@@ -359,7 +368,7 @@ class AssetBin(gameduino2.base.GD2):
         dr = ImageDraw.Draw(im)
         for i in rr:
             dr.text((8,8), chr(i), font=font, fill=255)
-        alle = gd2.prep.extents(im)
+        alle = extents(im)
 
         # render and crop the characters to the extents
         ims = [None] * firstchar
@@ -428,11 +437,11 @@ class AssetBin(gameduino2.base.GD2):
                             t = fetchtile(layer, i + x, j + y)
                             # if i < (480 / 16) and j < (272 / 16): print 16 * (i + x), 16 * (j + y), "tile", t
                             if t is not None:
-                                eve.Vertex2ii(stw * x, sth * y, t / 128, t % 128)
+                                eve.Vertex2ii(stw * x, sth * y, t // 128, t % 128)
                             else:
                                 eve.Nop()
         # assert 0
-        stride = ((w + 3) / 4)
+        stride = ((w + 3) // 4)
         self.add(name, struct.pack("6H", w * stw, h * sth, stw * 4, sth * 4, stride, len(layers)) + eve.d)
         self.tile_files = world_map.tile_sets[0].images[0].source
 
@@ -444,11 +453,11 @@ class AssetBin(gameduino2.base.GD2):
             if hasattr(ts, 'columns'):
                 w = int(ts.columns)
             elif not hasattr(ts, 'spacing'):
-                w = im.size[0] / tw
+                w = im.size[0] // tw
             else:
-                w = (im.size[0] + ts.spacing) / (tw + ts.spacing)
+                w = (im.size[0] + ts.spacing) // (tw + ts.spacing)
             x = ts.margin + (tw + ts.spacing) * (i % w)
-            y = ts.margin + (th + ts.spacing) * (i / w)
+            y = ts.margin + (th + ts.spacing) * (i // w)
             r = im.crop((x + 0, y + 0, x + tw, y + th))
             if scale:
                 r = r.resize((stw, sth), Image.ANTIALIAS)
@@ -459,35 +468,37 @@ class AssetBin(gameduino2.base.GD2):
         if preview:
             pv = Image.new("RGB", (tw * w, th * h))
             layer = layers[0]
-            for y in range(pv.size[1] / th):
-                for x in range(pv.size[0] / tw):
+            for y in range(pv.size[1] // th):
+                for x in range(pv.size[0] // tw):
                     t = fetchtile(layer, x, y)
                     pv.paste(extract(used[t] - 1), (16 * x, 16 * y))
             return pv
 
-    def load_atlas(self, file_name, scale = None):
+    def load_atlas(self, file_name, scale = None, filter = lambda _: True):
         tree = ET.parse(file_name)
         root = tree.getroot()
         if root.tag == 'TextureAtlas':
-            imagepath = root.attrib['imagePath']
+            p = os.path
+            imagepath = p.join(p.dirname(file_name), root.attrib['imagePath'])
             im = Image.open(imagepath)
             fmt = gd2.ARGB4
             for child in root.iter('SubTexture'):
                 a = child.attrib
                 # print a
-                (x, y, width, height) = [int(a[n]) for n in ["x", "y", "width", "height"]]
-                sub = im.crop((x, y, x + width, y + height))
-                if scale is not None:
-                    width = int(width * scale)
-                    height = int(height * scale)
-                    sub = sub.resize((width, height), Image.ANTIALIAS)
-                src = self.load_bitmap(sub, fmt)
                 nm = a['name']
-                nm = nm.replace('.png', '')
-                lp = len(self.alldata)
-                self.inits.append("#define atlas_%s __fromatlas(%s)" % (nm, ul(lp)))
-                self.alldata += struct.pack("HHHHIB", width, height, width / 2, height / 2, src, fmt)
-                sub.save("%s.png" % nm)
+                if filter(nm):
+                    (x, y, width, height) = [int(a[n]) for n in ["x", "y", "width", "height"]]
+                    sub = im.crop((x, y, x + width, y + height))
+                    if scale is not None:
+                        width = int(width * scale)
+                        height = int(height * scale)
+                        sub = sub.resize((width, height), Image.ANTIALIAS)
+                    (_,src) = self.load_internal(sub, fmt)
+                    nm = nm.replace('.png', '')
+                    lp = len(self.alldata)
+                    self.inits.append("#define atlas_%s __fromatlas(%s)" % (nm, ul(lp)))
+                    self.alldata += struct.pack("HHHHIB", width, height, width // 2, height // 2, src, fmt)
+                    sub.save("%s.png" % nm)
 
     """
     def dxt1(self, imagefile):
@@ -499,7 +510,7 @@ class AssetBin(gameduino2.base.GD2):
             im.save("tmp.png")
             assert os.system("squishpng tmp.png %s" % dxt) == 0
 
-        sz = (480 / 4, 272 / 4)
+        sz = (480 // 4, 272 // 4)
 
         def rgb(cs):
             r = (cs >> 11) << 3
@@ -536,9 +547,9 @@ class AssetBin(gameduino2.base.GD2):
                     # print c0<c1,hex(bit)
                     r0,g0,b0 = rgb(c0)
                     r1,g1,b1 = rgb(c1)
-                    r = (r0 + r1) / 2
-                    g = (g0 + g1) / 2
-                    b = (b0 + b1) / 2
+                    r = (r0 + r1) // 2
+                    g = (g0 + g1) // 2
+                    b = (b0 + b1) // 2
                     # r,g,b = (255,0,255)
                     c0 = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)
                     c1 = c0
@@ -607,10 +618,10 @@ class AssetBin(gameduino2.base.GD2):
     def load_sample(self, name, filename):
         f = wave.open(filename, "rb")
         if f.getnchannels() != 1:
-            print "Sorry - .wav file must be mono"
+            print("Sorry - .wav file must be mono")
             sys.exit(1)
         if f.getsampwidth() != 2:
-            print "Sorry - .wav file must be 16-bit"
+            print("Sorry - .wav file must be 16-bit")
             sys.exit(1)
         freq = f.getframerate()
         pcm16 = f.readframes(f.getnframes())
@@ -633,44 +644,46 @@ class AssetBin(gameduino2.base.GD2):
         self.name = name
         self.addall()
         if len(self.alldata) > self.maxram:
-            print "Error: The data (%d bytes) is larger the the %s RAM (%d)" % (len(self.alldata), self.device, self.maxram)
+            print("Error: The data (%d bytes) is larger the the %s RAM (%d)" % (len(self.alldata), self.device, self.maxram))
             sys.exit(1)
         self.defines.append((self.prefix + "ASSETS_END", ul(len(self.alldata))))
         self.cmd_inflate(0)
         calldata = zlib.compress(self.alldata, 9)
         commandblock = self.commands + pad4(calldata)
 
-        print 'Assets report'
-        print '-------------'
-        print 'Header file:    %s' % self.header
-        print '%s RAM used:   %d' % (self.device, len(self.alldata))
+        print('Assets report')
+        print('-------------')
+        print('Header file:    %s' % self.header)
+        print('%s RAM used:   %d' % (self.device, len(self.alldata)))
         if not self.asset_file:
-            print 'Flash used:     %d' % len(commandblock)
+            print('Flash used:     %d' % len(commandblock))
         else:
-            print 'Output file:    %s' % self.asset_file
-            print 'File size:      %d' % len(calldata)
+            print('Output file:    %s' % self.asset_file)
+            print('File size:      %d' % len(calldata))
 
         hh = open(name, "w")
 
         hh.write(self.header_intro)
 
         for (nm,v) in self.defines:
-            print >>hh, "#define %s %s" % (nm, v)
+            hh.write("#define %s %s\n" % (nm, v))
 
         p = self.prefix
 
         if self.asset_file is None:
-            print >>hh, "static const PROGMEM uint8_t %s__assets[%d] = {" % (p, len(commandblock))
-            print >>hh, textwrap.fill(", ".join(["%d" % ord(c) for c in commandblock]))
-            print >>hh, "};"
-            print >>hh, "#define %sLOAD_ASSETS()  (GD.copy(%s__assets, sizeof(%s__assets)), GD.loadptr = %sASSETS_END)" % (p, p, p, p)
+            hh.write("static const PROGMEM uint8_t %s__assets[%d] = {\n" % (p, len(commandblock)))
+            if PYTHON2:
+                hh.write(textwrap.fill(", ".join(["%d" % ord(c) for c in commandblock])) + "\n")
+            else:
+                hh.write(textwrap.fill(", ".join(["%d" % c for c in commandblock])) + "\n")
+            hh.write("};\n")
+            hh.write("#define %sLOAD_ASSETS()  (GD.copy(%s__assets, sizeof(%s__assets)), GD.loadptr = %sASSETS_END)\n" % (p, p, p, p))
         else:
             open(self.asset_file, "wb").write(commandblock)
-            print >>hh, '#define %sLOAD_ASSETS()  (GD.safeload("%s"), GD.loadptr = %sASSETS_END)' % (p, self.asset_file, p)
-        print >>hh
+            hh.write('#define %sLOAD_ASSETS()  (GD.safeload("%s"), GD.loadptr = %sASSETS_END)\n' % (p, self.asset_file, p))
 
         for i in self.inits:
-            print >>hh, i
+            hh.write(i + "\n")
         self.dump_bitmaps(hh)
         self.extras(hh)
 
@@ -696,34 +709,33 @@ class ForthAssetBin(AssetBin):
         self.name = name
         self.addall()
         if len(self.alldata) > self.maxram:
-            print "Error: The data (%d bytes) is larger the the GD2 RAM" % len(self.alldata)
+            print("Error: The data (%d bytes) is larger the the GD2 RAM" % len(self.alldata))
             sys.exit(1)
         self.defines.append((self.prefix + "ASSETS_END", ul(len(self.alldata))))
         self.cmd_inflate(0)
         calldata = zlib.compress(self.alldata)
-        print 'Assets report'
-        print '-------------'
-        print 'Header file:    %s' % self.header
-        print 'GD2 RAM used:   %d' % len(self.alldata)
+        print('Assets report')
+        print('-------------')
+        print('Header file:    %s' % self.header)
+        print('GD2 RAM used:   %d' % len(self.alldata))
         if not self.asset_file:
-            print 'Flash used:     %d' % len(calldata)
+            print('Flash used:     %d' % len(calldata))
         else:
-            print 'Output file:    %s' % self.asset_file
-            print 'File size:      %d' % len(calldata)
+            print('Output file:    %s' % self.asset_file)
+            print('File size:      %d' % len(calldata))
 
         commandblock = self.commands + calldata
         commandblock += chr(0) * ((-len(commandblock)) & 3)
         commandblock32 = array.array('I', commandblock)
 
         hh = open(name, "w")
-        print >>hh, "base @"
-        print >>hh, "hex"
+        hh.write("base @ hex\n")
         if self.asset_file is None:
-            print >>hh, textwrap.fill(" ".join(["%08x GD.c" % c for c in commandblock32]))
+            hh.write(textwrap.fill(" ".join(["%08x GD.c" % c for c in commandblock32])) + "\n")
         else:
             open(self.asset_file, "wb").write(commandblock)
-        print >>hh, "decimal"
+        gg.write("decimal\n")
         for (nm,v) in self.defines:
-            print >>hh, "%-8s constant %s" % (str(v).replace('UL', ''), nm)
-        print >>hh, "base !"
+            hh.write("%-8s constant %s\n" % (str(v).replace('UL', ''), nm))
+        hh.write("base !\n")
         self.extras(hh)
