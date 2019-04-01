@@ -8,6 +8,7 @@ import textwrap
 import wave
 import audioop
 import xml.etree.ElementTree as ET
+import tempfile
 
 from PIL import Image, ImageFont, ImageDraw, ImageChops
 
@@ -20,8 +21,71 @@ PYTHON2 = (sys.version_info < (3, 0))
 
 def pad4(s):
     while len(s) % 4:
-        s += chr(0)
+        s += b'\x00'
     return s
+
+def is_astc(f):
+    return f in (
+        gd2.ASTC_4x4,
+        gd2.ASTC_5x4,
+        gd2.ASTC_5x5,
+        gd2.ASTC_6x5,
+        gd2.ASTC_6x6,
+        gd2.ASTC_8x5,
+        gd2.ASTC_8x6,
+        gd2.ASTC_8x8,
+        gd2.ASTC_10x5,
+        gd2.ASTC_10x6,
+        gd2.ASTC_10x8,
+        gd2.ASTC_10x10,
+        gd2.ASTC_12x10,
+        gd2.ASTC_12x12)
+
+def astc_dims(f):
+    return {
+        gd2.ASTC_4x4 : (4,4),
+        gd2.ASTC_5x4 : (5,4),
+        gd2.ASTC_5x5 : (5,5),
+        gd2.ASTC_6x5 : (6,5),
+        gd2.ASTC_6x6 : (6,6),
+        gd2.ASTC_8x5 : (8,5),
+        gd2.ASTC_8x6 : (8,6),
+        gd2.ASTC_8x8 : (8,8),
+        gd2.ASTC_10x5 : (10,5),
+        gd2.ASTC_10x6 : (10,6),
+        gd2.ASTC_10x8 : (10,8),
+        gd2.ASTC_10x10 : (10,10),
+        gd2.ASTC_12x10 : (12,10),
+        gd2.ASTC_12x12 : (12,12)
+    }[f]
+
+def tile2(d, bw, bh):
+    assert len(d) == 16 * bw * bh
+    fe = [d[i:i+16] for i in range(0, len(d), 16)]
+    assert len(fe) == bw * bh
+    r = []
+    for j in range(0, bh - 1, 2):
+        for i in range(0, bw, 2):
+            if i < (bw - 1):
+                r += [
+                    fe[bw * j + i],
+                    fe[bw * (j+1) + i],
+                    fe[bw * (j+1) + (i+1)],
+                    fe[bw * j + (i+1)]]
+            else:
+                r += [
+                    fe[bw * j + i],
+                    fe[bw * (j+1) + i]]
+    if bh & 1:
+        r += fe[bw * (bh - 1):]
+    assert len(r) == (bh * bw)
+    return b"".join(r)
+
+def astc_tile(f):
+    (_,w,h,_,iw,_,ih,_,_,_) = struct.unpack("<IBBBHBHBHB", f.read(16))
+    (bw, bh) = ((iw + (w - 1)) // w, (ih + (h - 1)) // h)
+    d = f.read()
+    return (bw, bh, tile2(d, bw, bh))
 
 def stretch(im):
     d = imbytes(im)
@@ -92,6 +156,9 @@ def extents(im):
 
 def ul(x):
     return str(x) + "UL"
+
+def round_up(x, n):
+    return ((x + n - 1) // n) * n
 
 def cname(s):
     """ make name s C-friendly """
@@ -221,6 +288,36 @@ class AssetBin(gameduino2.base.GD2):
     def load_internal(self, im, fmt, dither = False):
         (w, h) = im.size
 
+        if is_astc(fmt):
+            self.align(64)
+            (w, h) = astc_dims(fmt)         # w,h ASTC tile size
+            (iw,ih) = im.size               # iw,ih image size
+            iw = round_up(iw, w)
+            ih = round_up(ih, h)
+
+            bw = iw // w                    # bw,bh ASTC block size
+            bh = ih // w
+
+            # ni = Image.new("RGBA", (iw, ih))
+            # ni.paste(im, (0, 0))
+            # im = ni
+
+            png = tempfile.NamedTemporaryFile(delete = False)
+            im.transpose(Image.FLIP_TOP_BOTTOM).save(png, 'png')
+
+            astc = tempfile.NamedTemporaryFile(delete = False)
+            astc.close()
+            effort = "exhaustive"
+            effort = "medium"
+            os.system("astcenc -c %s %s %dx%d -silentmode -%s" % (png.name, astc.name, w, h, effort))
+            os.unlink(png.name)
+            (_, _, d0) = astc_tile(open(astc.name, "rb"))
+            os.unlink(astc.name)
+
+            r = len(self.alldata)
+            self.alldata += d0
+            return (im, r)
+
         self.align(2)
 
         # aw is aligned width
@@ -261,7 +358,10 @@ class AssetBin(gameduino2.base.GD2):
 
         (w, h) = images[0].size
 
-        self.align(2)
+        if is_astc(fmt):
+            self.align(64)
+        else:
+            self.align(2)
 
         if name is not None:
             self.define("%s_HANDLE" % name, self.handle)
@@ -286,16 +386,48 @@ class AssetBin(gameduino2.base.GD2):
         if name is not None:
             self.inits.append("static const shape_t %s_SHAPE = {%d, %d, %d, %d};" % (name, self.handle, w, h, vsz))
 
+        if is_astc(fmt):
+            (w, h) = astc_dims(fmt)         # w,h ASTC tile size
+            (iw,ih) = images[0].size        # iw,ih image size
+            iw = round_up(iw, w)
+            ih = round_up(ih, h)
+
+            bw = iw // w                    # bw,bh ASTC block size
+            bh = ih // w
+
+            im = Image.new("RGBA", (iw, len(images) * ih))
+
+            for i,s in enumerate(images):
+                im.paste(s, (0, i * ih))
+            png = tempfile.NamedTemporaryFile(delete = False)
+            im.transpose(Image.FLIP_TOP_BOTTOM).save(png, 'png')
+
+            astc = tempfile.NamedTemporaryFile(delete = False)
+            astc.close()
+            effort = "exhaustive"
+            effort = "medium"
+            os.system("astcenc -c %s %s %dx%d -silentmode -%s" % (png.name, astc.name, w, h, effort))
+            os.unlink(png.name)
+            (_, _, d0) = astc_tile(open(astc.name, "rb"))
+            os.unlink(astc.name)
+
+            self.alldata += d0
+
+            lw = 16 * bw
+            self.BitmapLayout(gd2.GLFORMAT, lw, bh)
+            self.BitmapLayoutH(lw >> 10, bh >> 9)
+            self.BitmapExtFormat(eval("gd2.ASTC_%dx%d" % (w, h)))
+
+            self.handle += 1
+            return
+            
         # aw is aligned width
         # For L1, L2, L4 formats the width must be a whole number of bytes
-        if fmt == gd2.L1:
-            aw = (w + 7) & ~7
-        elif fmt == gd2.L2:
-            aw = (w + 3) & ~3
-        elif fmt == gd2.L4:
-            aw = (w + 1) & ~1
-        else:
-            aw = w
+        aw = round_up(w, {
+            gd2.L1: 8,
+            gd2.L2: 4,
+            gd2.L4: 2,
+            }.get(fmt, 1))
 
         bpl = {
             gd2.ARGB1555 : 2 * aw,

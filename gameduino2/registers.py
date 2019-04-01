@@ -27,10 +27,27 @@ PALETTED             = 8
 TEXT8X8              = 9
 TEXTVGA              = 10
 BARGRAPH             = 11
-PALETTED565          = 14   # FT810
-PALETTED4444         = 15   # FT810
-PALETTED8            = 16   # FT810
-L2                   = 17   # FT810
+PALETTED565          = 14       # FT810
+PALETTED4444         = 15       # FT810
+PALETTED8            = 16       # FT810
+L2                   = 17       # FT810
+
+GLFORMAT             = 31       # FT815
+ASTC_4x4             = 0x93B0   # BT815
+ASTC_5x4             = 0x93B1   # BT815
+ASTC_5x5             = 0x93B2   # BT815
+ASTC_6x5             = 0x93B3   # BT815
+ASTC_6x6             = 0x93B4   # BT815
+ASTC_8x5             = 0x93B5   # BT815
+ASTC_8x6             = 0x93B6   # BT815
+ASTC_8x8             = 0x93B7   # BT815
+ASTC_10x5            = 0x93B8   # BT815
+ASTC_10x6            = 0x93B9   # BT815
+ASTC_10x8            = 0x93BA   # BT815
+ASTC_10x10           = 0x93BB   # BT815
+ASTC_12x10           = 0x93BC   # BT815
+ASTC_12x12           = 0x93BD   # BT815
+
 
 NEAREST              = 0
 BILINEAR             = 1
@@ -179,3 +196,8 @@ REG_VSYNC1           = 1057868
 
 def VERTEX2II(x, y, handle, cell):
     return ((2 << 30) | ((x & 511) << 21) | ((y & 511) << 12) | ((handle & 31) << 7) | ((cell & 127) << 0))
+
+RED                  = 2
+GREEN                = 3
+BLUE                 = 4
+ALPHA                = 5

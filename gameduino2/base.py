@@ -313,3 +313,10 @@ class GD2:
         self.Display()
         self.cmd_swap()
         self.cmd_dlstart()
+
+    # The new 815 opcodes
+    def BitmapExtFormat(self, fmt):
+        self.c4((46 << 24) | (fmt & 65535))
+    
+    def BitmapSwizzle(self, r, g, b, a):
+        self.c4((47 << 24) | ((r & 7) << 9) | ((g & 7) << 6) | ((b & 7) << 3) | ((a & 7)))
