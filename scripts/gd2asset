@@ -1,9 +1,10 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 from __future__ import print_function
 
 import gameduino2.registers as gd2
 import gameduino2.prep
 
+import sys
 import os
 import array
 
@@ -11,7 +12,10 @@ from PIL import Image
 import wave
 import audioop
 
-formats = ('L1', 'L2', 'L4', 'L8', 'RGB332', 'ARGB2', 'ARGB4', 'RGB565', 'ARGB1555')
+PYTHON2 = (sys.version_info < (3, 0))
+
+formats = ('L1', 'L2', 'L4', 'L8', 'RGB332', 'ARGB2', 'ARGB4', 'RGB565', 'ARGB1555',
+'ASTC_4x4', 'ASTC_5x4', 'ASTC_5x5', 'ASTC_6x5', 'ASTC_6x6', 'ASTC_8x5', 'ASTC_8x6', 'ASTC_8x8', 'ASTC_10x5', 'ASTC_10x6', 'ASTC_10x8', 'ASTC_10x10', 'ASTC_12x10', 'ASTC_12x12')
 
 def cname(s):
     """ make name s C-friendly """
@@ -78,7 +82,10 @@ class GD2Assets(gameduino2.prep.AssetBin):
         pcm16 = f.readframes(f.getnframes())
         (adpcm, _) = audioop.lin2adpcm(pcm16, f.getsampwidth(), (0,0))
         adpcm = adpcm[:len(adpcm) & ~7]
-        da = array.array('B', [((ord(c) >> 4) | ((15 & ord(c)) << 4)) for c in adpcm])
+        if PYTHON2:
+          da = array.array('B', [((ord(c) >> 4) | ((15 & ord(c)) << 4)) for c in adpcm])
+        else:
+          da = array.array('B', [((c >> 4) | ((15 & c) << 4)) for c in adpcm])
         self.align(8)
         self.add(name, da.tostring())
         self.define(name + "_LENGTH", len(da))
