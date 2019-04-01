@@ -1,6 +1,16 @@
 # gd2-asset
 
 
+The repo contains the source for ``gd2asset`` and ``gd3assets`` - command-line tools
+for converting graphics, fonts and sound for Gameduino 2, 3 and 3X.
+
+Also included is the Python gameduino2 module.
+
+Pre-built executables for Windows are available at:
+
+* https://excamera.com/files/gd2asset.exe
+* https://excamera.com/files/gd3asset.exe
+
 usage:
     
     gd2asset <options> <assets>
@@ -51,3 +61,8 @@ To install do:
 
     python setup.py sdist
     twine upload dist/*
+
+To build the Windows executables, do:
+
+    pyinstaller --onefile scripts/gd2asset
+    pyinstaller --onefile scripts/gd3asset

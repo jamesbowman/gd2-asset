@@ -458,7 +458,10 @@ class AssetBin(gameduino2.base.GD2):
                     self.np = numpy
                 preview(self.np, fmt, im.size, imgdata).save("previews/%s-%s-%02d.png" % (self.name, name, i))
             """
-            self.alldata += imgdata.tobytes()
+            if PYTHON2:
+                self.alldata += imgdata.tostring()
+            else:
+                self.alldata += imgdata.tobytes()
 
         self.handle += 1
 
