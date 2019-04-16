@@ -335,7 +335,7 @@ class PSDParser(object):
                 raise ValueError("Unsupported compression type: {}".format(COMPRESSIONS.get(comp, comp)))
 
             if (chlen is not None) and (self.fd.tell() != chpos + 2 + chlen):
-                logger.debug("currentpos:{:d} should be:{:d}!".format(f.tell(), chpos + 2 + chlen))
+                logger.debug("currentpos:{:d} should be:{:d}!".format(self.fd.tell(), chpos + 2 + chlen))
                 self.fd.seek(chpos + 2 + chlen, 0) # 0: SEEK_SET
 
             return
