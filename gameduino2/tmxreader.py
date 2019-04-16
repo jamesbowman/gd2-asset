@@ -39,7 +39,7 @@ __author__ = 'DR0ID @ 2009-2011'
 
 # _LOGGER = logging.getLogger('tiledtmxloader')
 # if __debug__:
-# _LOGGER.debug('%s loading ...' % (__name__))
+# _LOGGER.debug('{} loading ...'.format(__name__))
 #  -----------------------------------------------------------------------------
 
 
@@ -350,7 +350,7 @@ class TileLayer(object):
                     self.decoded_content = list(map(int, [val for val in self.decoded_content if val]))
                     content = ""
                 else:
-                    raise Exception('unknown data encoding %s' % self.encoding)
+                    raise Exception('unknown data encoding {}'.format(self.encoding))
             else:
                 # in the case of xml the encoded_content already contains a
                 # list of integers
@@ -362,7 +362,7 @@ class TileLayer(object):
                 elif self.compression == 'zlib':
                     content = decompress_zlib(content)
                 else:
-                    raise Exception('unknown data compression %s' % self.compression)
+                    raise Exception('unknown data compression {}'.format(self.compression))
         else:
             raise Exception('no encoded content to decode')
 
@@ -588,7 +588,7 @@ def printer(obj, ident=''):
                     print(ident + 'data = ')
                     printer(elem, ident + '    ')
                 else:
-                    print(ident + '%s\t= %s' % (name, getattr(obj, name)))
+                    print(ident + '{}\t= {}'.format(name, getattr(obj, name)))
     for objt_list in lists:
         for _obj in objt_list:
             printer(_obj, ident + '    ')
@@ -687,8 +687,7 @@ class TileMapParser(object):
                 # print 'has childnodes', node.hasChildNodes()
                 layer.encoded_content = []
                 for child in node.childNodes:
-                    if child.nodeType == Node.ELEMENT_NODE and \
-                            child.nodeName == "tile":
+                    if child.nodeType == Node.ELEMENT_NODE and child.nodeName == "tile":
                         val = child.attributes["gid"].nodeValue
                         # print child, val
                         layer.encoded_content.append(val)
@@ -698,7 +697,7 @@ class TileMapParser(object):
         world_map = TileMap()
         self._set_attributes(world_node, world_map)
         if world_map.version != "1.0":
-            raise VersionError('this parser was made for maps of version 1.0, found version %s' % world_map.version)
+            raise VersionError('this parser was made for maps of version 1.0, found version {}'.format(world_map.version))
         for node in self._get_nodes(world_node.childNodes, 'tileset'):
             self._build_tile_set(node, world_map)
         for node in self._get_nodes(world_node.childNodes, 'layer'):
@@ -718,11 +717,9 @@ class TileMapParser(object):
                     (x, y) = [int(c) for c in s.split(",")]
                     return int(tiled_object.x) + x, int(tiled_object.y) + y
 
-                tiled_object.polyline = \
-                    [xy(s) for s in p.attributes['points'].nodeValue.split()]
+                tiled_object.polyline = [xy(s) for s in p.attributes['points'].nodeValue.split()]
             for img_node in self._get_nodes(node.childNodes, 'image'):
-                tiled_object.image_source = \
-                    img_node.attributes['source'].nodeValue
+                tiled_object.image_source = img_node.attributes['source'].nodeValue
             object_group.objects.append(tiled_object)
         # ISSUE 9
         world_map.layers.append(object_group)
@@ -744,11 +741,9 @@ class TileMapParser(object):
         for properties_node in self._get_nodes(node.childNodes, 'properties'):
             for property_node in self._get_nodes(properties_node.childNodes, 'property'):
                 try:
-                    props[property_node.attributes['name'].nodeValue] = \
-                        property_node.attributes['value'].nodeValue
+                    props[property_node.attributes['name'].nodeValue] = property_node.attributes['value'].nodeValue
                 except KeyError:
-                    props[property_node.attributes['name'].nodeValue] = \
-                        property_node.lastChild.nodeValue
+                    props[property_node.attributes['name'].nodeValue] = property_node.lastChild.nodeValue
         obj.properties.update(props)
 
     # -- parsers -- #
@@ -906,8 +901,7 @@ class AbstractResourceLoader(object):
             offsety = tile_height - tile_map.tileheight
         idx = 0
         for image in self._load_image_parts(img_path, tile_set.margin, tile_set.spacing, tile_width, tile_height, a_tile_image.trans):
-            self.indexed_tiles[int(tile_set.firstgid) + idx] = \
-                (offsetx, -offsety, image)
+            self.indexed_tiles[int(tile_set.firstgid) + idx] = (offsetx, -offsety, image)
             idx += 1
 
     def _load_tile_image(self, a_tile_image):
@@ -916,7 +910,7 @@ class AbstractResourceLoader(object):
             if a_tile_image.encoding == 'base64':
                 img_str = decode_base64(a_tile_image.content)
             else:
-                raise Exception('unknown image encoding %s' % a_tile_image.encoding)
+                raise Exception('unknown image encoding {}'.format(a_tile_image.encoding))
         sio = StringIO(img_str)
         new_image = self._load_image_file_like(sio, a_tile_image.trans)
         return new_image
