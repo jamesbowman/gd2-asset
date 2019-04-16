@@ -3,8 +3,9 @@ import random
 
 from PIL import Image
 
-from gameduino2.registers import *
 from gameduino2.imbytes import imbytes
+from gameduino2.registers import ARGB1555, ARGB2, ARGB4, L1, L2, L4, L8, PALETTED, RGB332, RGB565
+
 
 def convert(im, dither = False, fmt = ARGB1555):
     """ Convert PIL image to GD2 format, optionally dithering"""
@@ -64,7 +65,7 @@ def convert(im, dither = False, fmt = ARGB1555):
             else:
                 dc = c
             return int((15. * dc / 255))
-                
+
         data = array.array('B', [(16 * to15(l) + to15(r)) for (l,r) in zip(b0, b1)])
     elif fmt == L2:
         b0 = imbytes(im)[::4]
@@ -77,7 +78,7 @@ def convert(im, dither = False, fmt = ARGB1555):
             else:
                 dc = c
             return int((3. * dc / 255))
-                
+
         data = array.array('B', [(64 * to3(a) + 16 * to3(b) + 4 * to3(c) + to3(d)) for (a,b,c,d) in zip(b0, b1, b2, b3)])
     elif fmt == L1:
         if dither:
