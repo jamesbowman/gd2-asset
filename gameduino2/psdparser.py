@@ -20,6 +20,12 @@ from struct import calcsize, unpack
 
 from PIL import Image
 
+try:
+    # noinspection PyUnresolvedReferences,PyUnboundLocalVariable
+    unichr(97)
+except NameError:  # Python3
+    unichr = chr
+
 logger = logging.getLogger(__name__)
 
 """
