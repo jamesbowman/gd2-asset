@@ -89,5 +89,5 @@ def convert(im, dither=False, fmt=ARGB1555):
             im = im.convert("1", dither=Image.NONE)
         data = imbytes(im)
     else:
-        assert 0, "Bad format %r" % fmt
+        assert 0, "Bad format {!r}".format(fmt)
     return (im.size, data)
