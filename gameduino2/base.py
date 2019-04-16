@@ -1,10 +1,21 @@
+import sys
 import struct
 
+PYTHON2 = (sys.version_info < (3, 0))
+
+B0 = b'\x00'
 def align4(s):
-    return s + chr(0) * (-len(s) & 3)
+    return s + B0 * (-len(s) & 3)
 
 def f16(v):
     return int(round(65536 * v))
+
+if PYTHON2:
+    def packstring(s):
+        return align4(s + B0)
+else:
+    def packstring(s):
+        return align4(bytes(s, "utf-8") + B0)
 
 class GD2:
     def c4(self, i):
@@ -93,9 +104,10 @@ class GD2:
         self.c4((20 << 24) | ((mask & 1) << 0))
     def Tag(self, s):
         self.c4((3 << 24) | ((s & 255) << 0))
+    vertex_scale = 4
     def Vertex2f(self, x, y):
-        x = int(16 * x)
-        y = int(16 * y)
+        x = int((1 << self.vertex_scale) * x)
+        y = int((1 << self.vertex_scale) * y)
         self.c4((1 << 30) | ((x & 32767) << 15) | ((y & 32767) << 0))
     def Vertex2ii(self, x,y,handle,cell):
         self.c4((2 << 30) | ((x & 511) << 21) | ((y & 511) << 12) | ((handle & 31) << 7) | ((cell & 127) << 0))
@@ -112,7 +124,7 @@ class GD2:
         self.c(struct.pack("IiiiiiiiiiiiiH", 0xffffff21, x0, y0, x1, y1, x2, y2, tx0, ty0, tx1, ty1, tx2, ty2, result))
 
     def cmd_button(self, x, y, w, h, font, options, s):
-        self.c(struct.pack("IhhhhhH", 0xffffff0d, x, y, w, h, font, options) + s + chr(0))
+        self.c(struct.pack("IhhhhhH", 0xffffff0d, x, y, w, h, font, options) + packstring(s))
 
     def cmd_calibrate(self, result):
         self.c(struct.pack("II", 0xffffff15, result))
@@ -157,7 +169,7 @@ class GD2:
         self.c(struct.pack("II", 0xffffff02, ms))
 
     def cmd_keys(self, x, y, w, h, font, options, s):
-        self.c(struct.pack("IhhhhhH", 0xffffff0e, x, y, w, h, font, options) + s + chr(0))
+        self.c(struct.pack("IhhhhhH", 0xffffff0e, x, y, w, h, font, options) + packstring(s))
 
     def cmd_loadidentity(self):
         self.c(struct.pack("I", 0xffffff26))
@@ -179,10 +191,6 @@ class GD2:
 
     def cmd_memwrite(self, ptr, num):
         self.c(struct.pack("III", 0xffffff1a, ptr, num))
-
-    def cmd_regwrite(self, ptr, val):
-        self.memwrite(ptr, 4)
-        self.c4(val)
 
     def cmd_regwrite(self, ptr, val):
         self.c(struct.pack("IIII", 0xffffff1a, ptr, 4, val))
@@ -218,7 +226,7 @@ class GD2:
         self.c(struct.pack("I", 0xffffff2a))
 
     def cmd_sketch(self, x, y, w, h, ptr, format):
-        self.c(struct.pack("IhhHHIH", 0xffffff30, x, y, w, h, ptr, format))
+        self.c(struct.pack("IhhHHII", 0xffffff30, x, y, w, h, ptr, format))
 
     def cmd_slider(self, x, y, w, h, options, val, range):
         self.c(struct.pack("IhhhhHHH", 0xffffff10, x, y, w, h, options, val, range))
@@ -236,10 +244,10 @@ class GD2:
         self.c(struct.pack("I", 0xffffff01))
 
     def cmd_text(self, x, y, font, options, s):
-        self.c(align4(struct.pack("IhhhH", 0xffffff0c, x, y, font, options) + s + chr(0)))
+        self.c(align4(struct.pack("IhhhH", 0xffffff0c, x, y, font, options) + packstring(s)))
 
     def cmd_toggle(self, x, y, w, font, options, state, s):
-        self.c(struct.pack("IhhhhHH", 0xffffff12, x, y, w, font, options, state) + s + chr(0))
+        self.c(struct.pack("IhhhhHH", 0xffffff12, x, y, w, font, options, state) + packstring(s))
 
     def cmd_touch_transform(self, x0, y0, x1, y1, x2, y2, tx0, ty0, tx1, ty1, tx2, ty2, result):
         self.c(struct.pack("IiiiiiiiiiiiiH", 0xffffff20, x0, y0, x1, y1, x2, y2, tx0, ty0, tx1, ty1, tx2, ty2, result))
@@ -297,7 +305,7 @@ class GD2:
         self.c(struct.pack("II", 0xffffff36, o))
 
     def cmd_setbitmap(self, source, fmt, w, h):
-        self.c(struct.pack("IIhhhh", 0xffffff43, source, fmt, w, h, 0))
+        self.c(struct.pack("IIHhhh", 0xffffff43, source, fmt, w, h, 0))
 
     # def cmd_snapshot2(self, 
     # def cmd_setbase(self, 
@@ -314,9 +322,38 @@ class GD2:
         self.cmd_swap()
         self.cmd_dlstart()
 
-    # The new 815 opcodes
+    # The 815 opcodes
     def BitmapExtFormat(self, fmt):
         self.c4((46 << 24) | (fmt & 65535))
     
     def BitmapSwizzle(self, r, g, b, a):
         self.c4((47 << 24) | ((r & 7) << 9) | ((g & 7) << 6) | ((b & 7) << 3) | ((a & 7)))
+
+    # The 815 commands
+
+    def cmd_flasherase(self):
+        self.c(struct.pack("I", 0xffffff44))
+
+    def cmd_flashwrite(self, a, b):
+        self.c(struct.pack("III", 0xffffff45, a, len(b)) + align4(b))
+
+    def cmd_flashupdate(self, dst, src, n):
+        self.c(struct.pack("IIII", 0xffffff47, dst, src, n))
+
+    def cmd_flashread(self, dst, a, n):
+        self.c(struct.pack("IIII", 0xffffff46, dst, a, n))
+
+    def cmd_flashdetach(self):
+        self.c(struct.pack("I", 0xffffff48))
+
+    def cmd_flashattach(self):
+        self.c(struct.pack("I", 0xffffff49))
+
+    def cmd_flashfast(self):
+        self.c(struct.pack("II", 0xffffff4a, 0xdeadbeef))
+
+    def cmd_flashspidesel(self):
+        self.c(struct.pack("I", 0xffffff4b))
+
+    def cmd_flashsource(self, a):
+        self.c(struct.pack("II", 0xffffff4e, a))
