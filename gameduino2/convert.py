@@ -43,7 +43,7 @@ def convert(im, dither=False, fmt=ARGB1555):
                     r = min(255, r + rnd.randrange(256 >> rsz))
                     g = min(255, g + rnd.randrange(256 >> gsz))
                     b = min(255, b + rnd.randrange(256 >> bsz))
-                binary = ((a >> (8 - asz)) << (bsz + gsz + rsz)) | ((r >> (8 - rsz)) << (gsz + bsz)) | ((g >> (8 - gsz)) << (bsz)) | (b >> (8 - bsz))
+                binary = ((a >> (8 - asz)) << (bsz + gsz + rsz)) | ((r >> (8 - rsz)) << (gsz + bsz)) | ((g >> (8 - gsz)) << bsz) | (b >> (8 - bsz))
                 imdata.append(binary)
         fmtchr = {8: 'B', 16: 'H'}[totalsz]
         data = array.array('B', array.array(fmtchr, imdata).tostring())
@@ -90,4 +90,4 @@ def convert(im, dither=False, fmt=ARGB1555):
         data = imbytes(im)
     else:
         assert 0, "Bad format {!r}".format(fmt)
-    return (im.size, data)
+    return im.size, data
