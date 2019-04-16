@@ -363,19 +363,19 @@ class PSDParser(object):
     def _read_descriptor(self):
         # Descriptor
         def _unicode_string():
-            len = self._readf(">L")[0]
+            length = self._readf(">L")[0]
             result = u''
-            for count in range(len):
+            for count in range(length):
                 val = self._readf(">H")[0]
                 if val:
                     result += unichr(val)
             return result
 
         def _string_or_key():
-            len = self._readf(">L")[0]
-            if not len:
-                len = 4
-            return self._readf(">{:d}s".format(len))[0]
+            length = self._readf(">L")[0]
+            if not length:
+                length = 4
+            return self._readf(">{:d}s".format(length))[0]
 
         def _desc_TEXT():
             return _unicode_string()
@@ -399,8 +399,8 @@ class PSDParser(object):
             # http://telegraphics.com.au/svn/psdparse
             # descriptor.c pdf.c
 
-            len = self._readf(">L")[0]
-            pdf_data = self.fd.read(len)
+            length = self._readf(">L")[0]
+            pdf_data = self.fd.read(length)
             return pdf_data
 
         _desc_item_factory = {
@@ -422,7 +422,7 @@ class PSDParser(object):
         for item_index in range(item_count):
             item_key = _string_or_key()
             item_type = self._readf(">4s")[0]
-            if not item_type in _desc_item_factory:
+            if item_type not in _desc_item_factory:
                 logger.debug(INDENT_OUTPUT(4, "unknown descriptor item '{}', skipping ahead.".format(item_type)))
                 break
 
