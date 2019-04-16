@@ -94,7 +94,7 @@ class TileMap(object):
 
 
     def __init__(self):
-#        This is the top container for all data. The gid is the global id 
+#        This is the top container for all data. The gid is the global id
 #       (for a image).
 #        Before calling convert most of the values are strings. Some additional
 #        values are also calculated, see convert() for details. After calling
@@ -223,7 +223,7 @@ class TileImage(object):
         encoding : string
             encoding of the content
         trans : tuple of (r,g,b)
-            the colorkey color, raw as hex, after calling convert just a 
+            the colorkey color, raw as hex, after calling convert just a
             (r,g,b) tuple
         properties : dict
             the propertis set in the editor, name-value pairs
@@ -329,7 +329,7 @@ class TileLayer(object):
 
     def decode(self):
         """
-        Converts the contents in a list of integers which are the gid of the 
+        Converts the contents in a list of integers which are the gid of the
         used tiles. If necessairy it decodes and uncompresses the contents.
         """
         self.decoded_content = []
@@ -349,7 +349,7 @@ class TileLayer(object):
                     raise Exception('unknown data encoding %s' % \
                                                                 (self.encoding))
             else:
-                # in the case of xml the encoded_content already contains a 
+                # in the case of xml the encoded_content already contains a
                 # list of integers
                 self.decoded_content = list(map(int, self.encoded_content))
                 content = ""
@@ -520,7 +520,7 @@ def decode_base64(in_str):
     :returns: decoded string
     """
     import base64
-    return base64.decodestring(in_str.encode('latin-1'))
+    return base64.decodebytes(in_str.encode('latin-1'))
 
 #  -----------------------------------------------------------------------------
 def decompress_gzip(in_str):
@@ -534,7 +534,7 @@ def decompress_gzip(in_str):
     :returns: uncompressed string
     """
     import gzip
-    
+
     if sys.version_info > (2, ):
         from io import BytesIO
         copmressed_stream = BytesIO(in_str)
@@ -611,7 +611,7 @@ class TileMapParser(object):
             # print "map file name", self.map_file_name
             file_name = self._get_abs_path(self.map_file_name, file_name)
         # print "tsx filename: ", file_name
-        # would be more elegant to use  "with open(file_name, "rb") as file:" 
+        # would be more elegant to use  "with open(file_name, "rb") as file:"
         # but that is python 2.6
         file = None
         try:
@@ -746,7 +746,7 @@ class TileMapParser(object):
         Parses the given map. Does no decoding nor loading of the data.
         :return: instance of TileMap
         """
-        # would be more elegant to use  
+        # would be more elegant to use
         # "with open(file_name, "rb") as tmx_file:" but that is python 2.6
         self.map_file_name = os.path.abspath(file_name)
         tmx_file = None
@@ -797,7 +797,7 @@ class AbstractResourceLoader(object):
             filename : string
                 Path to the file to be loaded.
             colorkey : tuple
-                The (r, g, b) color that should be used as colorkey 
+                The (r, g, b) color that should be used as colorkey
                 (or magic color).
                 Default: None
 
@@ -814,7 +814,7 @@ class AbstractResourceLoader(object):
             file_like_obj : file
                 This is the file like object to load the image from.
             colorkey : tuple
-                The (r, g, b) color that should be used as colorkey 
+                The (r, g, b) color that should be used as colorkey
                 (or magic color).
                 Default: None
 
@@ -838,7 +838,7 @@ class AbstractResourceLoader(object):
             tileheight : int
                 The height of a single tile.
             colorkey : tuple
-                The (r, g, b) color that should be used as colorkey 
+                The (r, g, b) color that should be used as colorkey
                 (or magic color).
                 Default: None
 
