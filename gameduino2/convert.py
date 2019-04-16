@@ -1,3 +1,5 @@
+from __future__ import division
+
 import array
 import random
 
@@ -64,7 +66,7 @@ def convert(im, dither = False, fmt = ARGB1555):
                 dc = min(255, c + rnd.randrange(16))
             else:
                 dc = c
-            return int((15. * dc / 255))
+            return int((15 * dc / 255))
 
         data = array.array('B', [(16 * to15(l) + to15(r)) for (l,r) in zip(b0, b1)])
     elif fmt == L2:
@@ -77,7 +79,7 @@ def convert(im, dither = False, fmt = ARGB1555):
                 dc = min(255, c + rnd.randrange(64))
             else:
                 dc = c
-            return int((3. * dc / 255))
+            return int((3 * dc / 255))
 
         data = array.array('B', [(64 * to3(a) + 16 * to3(b) + 4 * to3(c) + to3(d)) for (a,b,c,d) in zip(b0, b1, b2, b3)])
     elif fmt == L1:
