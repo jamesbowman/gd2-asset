@@ -35,11 +35,11 @@ __author__ = 'DR0ID @ 2009-2011'
 # #the following few lines are needed to use logging if this module used without
 # # a previous call to logging.basicConfig()
 # if 0 == len(logging.root.handlers):
-    # logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 
 # _LOGGER = logging.getLogger('tiledtmxloader')
 # if __debug__:
-    # _LOGGER.debug('%s loading ...' % (__name__))
+# _LOGGER.debug('%s loading ...' % (__name__))
 #  -----------------------------------------------------------------------------
 
 
@@ -53,7 +53,8 @@ try:
     # noinspection PyUnresolvedReferences,PyCompatibility
     from StringIO import StringIO  # Python 2
 except ImportError:
-    from io import StringIO # Python 3
+    from io import StringIO  # Python 3
+
 
 #  -----------------------------------------------------------------------------
 class TileMap(object):
@@ -93,13 +94,12 @@ class TileMap(object):
 
     """
 
-
     def __init__(self):
-#        This is the top container for all data. The gid is the global id
-#       (for a image).
-#        Before calling convert most of the values are strings. Some additional
-#        values are also calculated, see convert() for details. After calling
-#        convert, most values are integers or floats where appropriat.
+        #        This is the top container for all data. The gid is the global id
+        #       (for a image).
+        #        Before calling convert most of the values are strings. Some additional
+        #        values are also calculated, see convert() for details. After calling
+        #        convert, most values are integers or floats where appropriat.
         """
         The TileMap holds all the map data.
         """
@@ -110,16 +110,16 @@ class TileMap(object):
         self.width = 0
         self.height = 0
         self.version = 0
-        self.tile_sets = [] # TileSet
+        self.tile_sets = []  # TileSet
         # ISSUE 9: object groups should be in the same order as layers
-        self.layers = [] # WorldTileLayer <- what order? back to front (guessed)
+        self.layers = []  # WorldTileLayer <- what order? back to front (guessed)
         # self.object_groups = []
-        self.properties = {} # {name: value}
+        self.properties = {}  # {name: value}
         # additional info
         self.pixel_width = 0
         self.pixel_height = 0
-        self.named_layers = {} # {name: layer}
-        self.named_tile_sets = {} # {name: tile_set}
+        self.named_layers = {}  # {name: layer}
+        self.named_tile_sets = {}  # {name: tile_set}
         self.map_file_name = ""
 
     def convert(self):
@@ -163,6 +163,8 @@ class TileMap(object):
         for layer in self.layers:
             if not layer.is_object_group:
                 layer.decode()
+
+
 #  -----------------------------------------------------------------------------
 
 
@@ -199,14 +201,15 @@ class TileSet(object):
     def __init__(self):
         self.firstgid = 0
         self.name = None
-        self.images = [] # TileImage
-        self.tiles = [] # Tile
-        self.indexed_images = {} # {id:image}
+        self.images = []  # TileImage
+        self.tiles = []  # Tile
+        self.indexed_images = {}  # {id:image}
         self.spacing = 0
         self.margin = 0
         self.properties = {}
         self.tileheight = 0
         self.tilewidth = 0
+
 
 #  -----------------------------------------------------------------------------
 
@@ -236,11 +239,12 @@ class TileImage(object):
         self.id = 0
         self.format = None
         self.source = None
-        self.encoding = None # from <data>...</data>
-        self.content = None # from <data>...</data>
+        self.encoding = None  # from <data>...</data>
+        self.content = None  # from <data>...</data>
         self.image = None
         self.trans = None
-        self.properties = {} # {name: value}
+        self.properties = {}  # {name: value}
+
 
 #  -----------------------------------------------------------------------------
 
@@ -257,16 +261,17 @@ class Tile(object):
             the propertis set in the editor, name-value pairs
     """
 
-# [20:22]	DR0ID_: to sum up: there are two use cases,
-# if the tile element has a child element 'image' then tile is
-# standalone with its own id and
-# the other case where a tileset is present then it
-# referes to the image with that id in the tileset
+    # [20:22]	DR0ID_: to sum up: there are two use cases,
+    # if the tile element has a child element 'image' then tile is
+    # standalone with its own id and
+    # the other case where a tileset is present then it
+    # referes to the image with that id in the tileset
 
     def __init__(self):
         self.id = 0
-        self.images = [] # uses TileImage but either only id will be set or image data
-        self.properties = {} # {name: value}
+        self.images = []  # uses TileImage but either only id will be set or image data
+        self.properties = {}  # {name: value}
+
 
 #  -----------------------------------------------------------------------------
 
@@ -323,10 +328,9 @@ class TileLayer(object):
         self.encoded_content = None
         self.decoded_content = []
         self.visible = True
-        self.properties = {} # {name: value}
+        self.properties = {}  # {name: value}
         self.content2D = None
-        self.is_object_group = False    # ISSUE 9
-
+        self.is_object_group = False  # ISSUE 9
 
     def decode(self):
         """
@@ -344,11 +348,11 @@ class TileLayer(object):
                     for line in list_of_lines:
                         self.decoded_content.extend(line.split(','))
                     self.decoded_content = list(map(int, \
-                                [val for val in self.decoded_content if val]))
+                                                    [val for val in self.decoded_content if val]))
                     content = ""
                 else:
                     raise Exception('unknown data encoding %s' % \
-                                                                (self.encoding))
+                                    (self.encoding))
             else:
                 # in the case of xml the encoded_content already contains a
                 # list of integers
@@ -361,7 +365,7 @@ class TileLayer(object):
                     content = decompress_zlib(content)
                 else:
                     raise Exception('unknown data compression %s' % \
-                                                            (self.compression))
+                                    (self.compression))
         else:
             raise Exception('no encoded content to decode')
 
@@ -388,7 +392,7 @@ class TileLayer(object):
             self.content2D.append(array.array('I'))
             for ypos in range(self.height):
                 self.content2D[xpos].append( \
-                                self.decoded_content[xpos + ypos * self.width])
+                        self.decoded_content[xpos + ypos * self.width])
 
     def pretty_print(self):
         num = 0
@@ -410,26 +414,27 @@ class TileLayer(object):
         self.visible = bool(int(self.visible))
 
     # def get_visible_tile_range(self, xmin, ymin, xmax, ymax):
-        # tile_w = self.pixel_width / self.width
-        # tile_h = self.pixel_height / self.height
-        # left = int(round(float(xmin) / tile_w)) - 1
-        # right = int(round(float(xmax) / tile_w)) + 2
-        # top = int(round(float(ymin) / tile_h)) - 1
-        # bottom = int(round(float(ymax) / tile_h)) + 2
-        # return (left, top, left - right, top - bottom)
+    # tile_w = self.pixel_width / self.width
+    # tile_h = self.pixel_height / self.height
+    # left = int(round(float(xmin) / tile_w)) - 1
+    # right = int(round(float(xmax) / tile_w)) + 2
+    # top = int(round(float(ymin) / tile_h)) - 1
+    # bottom = int(round(float(ymax) / tile_h)) + 2
+    # return (left, top, left - right, top - bottom)
 
     # def get_tiles(self, xmin, ymin, xmax, ymax):
-        # tiles = []
-        # if self.visible:
-            # for ypos in range(ymin, ymax):
-                # for xpos in range(xmin, xmax):
-                    # try:
-                        # img_idx = self.content2D[xpos][ypos]
-                        # if img_idx:
-                            # tiles.append((xpos, ypos, img_idx))
-                    # except IndexError:
-                        # pass
-        # return tiles
+    # tiles = []
+    # if self.visible:
+    # for ypos in range(ymin, ymax):
+    # for xpos in range(xmin, xmax):
+    # try:
+    # img_idx = self.content2D[xpos][ypos]
+    # if img_idx:
+    # tiles.append((xpos, ypos, img_idx))
+    # except IndexError:
+    # pass
+    # return tiles
+
 
 #  -----------------------------------------------------------------------------
 
@@ -462,8 +467,8 @@ class MapObjectGroupLayer(object):
         self.x = 0
         self.y = 0
         self.visible = True
-        self.properties = {} # {name: value}
-        self.is_object_group = True # ISSUE 9
+        self.properties = {}  # {name: value}
+        self.is_object_group = True  # ISSUE 9
 
     def convert(self):
         self.x = int(self.x)
@@ -475,6 +480,7 @@ class MapObjectGroupLayer(object):
             map_obj.y = int(float(map_obj.y))
             map_obj.width = int(float(map_obj.width))
             map_obj.height = int(float(map_obj.height))
+
 
 #  -----------------------------------------------------------------------------
 
@@ -498,6 +504,7 @@ class MapObject(object):
         image : :class:TileImage
             after loading this is the pygame surface containing the image
     """
+
     def __init__(self):
         self.name = None
         self.x = 0
@@ -507,7 +514,8 @@ class MapObject(object):
         self.type = None
         self.image_source = None
         self.image = None
-        self.properties = {} # {name: value}
+        self.properties = {}  # {name: value}
+
 
 #  -----------------------------------------------------------------------------
 def decode_base64(in_str):
@@ -523,6 +531,7 @@ def decode_base64(in_str):
     import base64
     return base64.decodebytes(in_str.encode('latin-1'))
 
+
 #  -----------------------------------------------------------------------------
 def decompress_gzip(in_str):
     """
@@ -536,7 +545,7 @@ def decompress_gzip(in_str):
     """
     import gzip
 
-    if sys.version_info > (2, ):
+    if sys.version_info > (2,):
         from io import BytesIO
         copmressed_stream = BytesIO(in_str)
     else:
@@ -546,6 +555,7 @@ def decompress_gzip(in_str):
     content = gzipper.read()
     gzipper.close()
     return content
+
 
 #  -----------------------------------------------------------------------------
 def decompress_zlib(in_str):
@@ -561,6 +571,8 @@ def decompress_zlib(in_str):
     import zlib
     content = zlib.decompress(in_str)
     return content
+
+
 #  -----------------------------------------------------------------------------
 def printer(obj, ident=''):
     """
@@ -585,9 +597,11 @@ def printer(obj, ident=''):
         for _obj in objt_list:
             printer(_obj, ident + '    ')
 
+
 #  -----------------------------------------------------------------------------
 
 class VersionError(Exception): pass
+
 
 #  -----------------------------------------------------------------------------
 class TileMapParser(object):
@@ -603,7 +617,7 @@ class TileMapParser(object):
             tile_set = self._parse_tsx(tile_set.source, tile_set, world_map)
         else:
             tile_set = self._get_tile_set(tile_set_node, tile_set, \
-                                                            self.map_file_name)
+                                          self.map_file_name)
         world_map.tile_sets.append(tile_set)
 
     def _parse_tsx(self, file_name, tile_set, world_map):
@@ -641,7 +655,7 @@ class TileMapParser(object):
         for node in self._get_nodes(image_node.childNodes, 'data'):
             self._set_attributes(node, image)
             image.content = node.childNodes[0].nodeValue
-        image.source = self._get_abs_path(base_path, image.source) # ISSUE 5
+        image.source = self._get_abs_path(base_path, image.source)  # ISSUE 5
         tile_set.images.append(image)
 
     def _get_abs_path(self, base, relative):
@@ -674,13 +688,13 @@ class TileMapParser(object):
             if layer.encoding:
                 layer.encoded_content = node.lastChild.nodeValue
             else:
-                #print 'has childnodes', node.hasChildNodes()
+                # print 'has childnodes', node.hasChildNodes()
                 layer.encoded_content = []
                 for child in node.childNodes:
                     if child.nodeType == Node.ELEMENT_NODE and \
-                                                    child.nodeName == "tile":
+                            child.nodeName == "tile":
                         val = child.attributes["gid"].nodeValue
-                        #print child, val
+                        # print child, val
                         layer.encoded_content.append(val)
         world_map.layers.append(layer)
 
@@ -699,7 +713,7 @@ class TileMapParser(object):
 
     def _build_object_groups(self, object_group_node, world_map):
         object_group = MapObjectGroupLayer()
-        self._set_attributes(object_group_node,  object_group)
+        self._set_attributes(object_group_node, object_group)
         for node in self._get_nodes(object_group_node.childNodes, 'object'):
             tiled_object = MapObject()
             self._set_attributes(node, tiled_object)
@@ -707,11 +721,12 @@ class TileMapParser(object):
                 def xy(s):
                     (x, y) = [int(c) for c in s.split(",")]
                     return (int(tiled_object.x) + x, int(tiled_object.y) + y)
+
                 tiled_object.polyline = \
-                                        [xy(s) for s in p.attributes['points'].nodeValue.split()]
+                    [xy(s) for s in p.attributes['points'].nodeValue.split()]
             for img_node in self._get_nodes(node.childNodes, 'image'):
                 tiled_object.image_source = \
-                                        img_node.attributes['source'].nodeValue
+                    img_node.attributes['source'].nodeValue
             object_group.objects.append(tiled_object)
         # ISSUE 9
         world_map.layers.append(object_group)
@@ -734,12 +749,11 @@ class TileMapParser(object):
             for property_node in self._get_nodes(properties_node.childNodes, 'property'):
                 try:
                     props[property_node.attributes['name'].nodeValue] = \
-                                    property_node.attributes['value'].nodeValue
+                        property_node.attributes['value'].nodeValue
                 except KeyError:
                     props[property_node.attributes['name'].nodeValue] = \
-                                            property_node.lastChild.nodeValue
+                        property_node.lastChild.nodeValue
         obj.properties.update(props)
-
 
     # -- parsers -- #
     def parse(self, file_name):
@@ -786,11 +800,11 @@ class AbstractResourceLoader(object):
     FLIP_Y = 1 << 30
 
     def __init__(self):
-        self.indexed_tiles = {} # {gid: (offsetx, offsety, image}
+        self.indexed_tiles = {}  # {gid: (offsetx, offsety, image}
         self.world_map = None
         self._img_cache = {}
 
-    def _load_image(self, filename, colorkey=None): # -> image
+    def _load_image(self, filename, colorkey=None):  # -> image
         """
         Load a single image.
 
@@ -807,7 +821,7 @@ class AbstractResourceLoader(object):
         """
         raise NotImplementedError('This should be implemented in a inherited class')
 
-    def _load_image_file_like(self, file_like_obj, colorkey=None): # -> image
+    def _load_image_file_like(self, file_like_obj, colorkey=None):  # -> image
         """
         Load a image from a file like object.
 
@@ -823,7 +837,7 @@ class AbstractResourceLoader(object):
         """
         raise NotImplementedError('This should be implemented in a inherited class')
 
-    def _load_image_parts(self, filename, margin, spacing, tilewidth, tileheight, colorkey=None): #-> [images]
+    def _load_image_parts(self, filename, margin, spacing, tilewidth, tileheight, colorkey=None):  # -> [images]
         """
         Load different tile images from one source image.
 
@@ -883,7 +897,7 @@ class AbstractResourceLoader(object):
     def _load_image_from_source(self, tile_map, tile_set, a_tile_image):
         # relative path to file
         img_path = os.path.join(os.path.dirname(tile_map.map_file_name), \
-                                                            a_tile_image.source)
+                                a_tile_image.source)
         tile_width = int(tile_map.tilewidth)
         tile_height = int(tile_map.tileheight)
         if tile_set.tileheight:
@@ -897,10 +911,10 @@ class AbstractResourceLoader(object):
             offsety = tile_height - tile_map.tileheight
         idx = 0
         for image in self._load_image_parts(img_path, \
-                    tile_set.margin, tile_set.spacing, \
-                    tile_width, tile_height, a_tile_image.trans):
+                                            tile_set.margin, tile_set.spacing, \
+                                            tile_width, tile_height, a_tile_image.trans):
             self.indexed_tiles[int(tile_set.firstgid) + idx] = \
-                                                    (offsetx, -offsety, image)
+                (offsetx, -offsety, image)
             idx += 1
 
     def _load_tile_image(self, a_tile_image):
@@ -915,4 +929,3 @@ class AbstractResourceLoader(object):
         return new_image
 
 #  -----------------------------------------------------------------------------
-
