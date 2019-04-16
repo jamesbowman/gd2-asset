@@ -232,7 +232,7 @@ class PSDParser(object):
         self.header['modename'] = MODES[self.header['mode']] if 0 <= self.header['mode'] < 16 else "({})".format(self.header['mode'])
 
         logger.debug(INDENT_OUTPUT(1, "channels:{channels:d}, rows:{rows:d}, cols:{cols:d}, depth:{depth:d}, mode:{mode:d} [{modename}]".format(**self.header)))
-        logger.debug(INDENT_OUTPUT(1, "{}".format(**self.header)))
+        logger.debug(INDENT_OUTPUT(1, "{}".format(self.header)))
 
         # Remember position
         self.header['colormodepos'] = self.fd.tell()
