@@ -155,7 +155,7 @@ def INDENT_OUTPUT(depth, msg):
 
 class PSDParser(object):
     header = None
-    ressources = None
+    resources = None
     num_layers = 0
     layers = None
     images = None
@@ -253,12 +253,12 @@ class PSDParser(object):
             r['rdesc'] = "[{}]".format(RESOURCE_DESCRIPTIONS.get(r['id'], "?"))
             logger.debug(INDENT_OUTPUT(1, "Resource: {}".format(r)))
             logger.debug(INDENT_OUTPUT(1, "0x{at:06x}| type:{type}, id:{id:5d}, size:0x{size:04x} {rdesc} '{short}'".format(**r)))
-            self.ressources.append(r)
+            self.resources.append(r)
             return 4 + 2 + self._pad2(1 + r['namelen']) + 4 + self._pad2(r['size'])
 
         logger.debug("")
         logger.debug("# Ressources #")
-        self.ressources = []
+        self.resources = []
         (n,) = self._readf(">L")  # (n,) is a 1-tuple.
         while n > 0:
             n -= parse_irb()
@@ -345,9 +345,9 @@ class PSDParser(object):
 
         if not self.header:
             self.parse_header()
-        if not self.ressources:
+        if not self.resources:
             self._skip_block("image resources", new_line=True)
-            self.ressources = 'not parsed'
+            self.resources = 'not parsed'
 
         logger.debug("")
         logger.debug("# Image: {}/{:d} #".format(li['name'], li['channels']))
@@ -435,9 +435,9 @@ class PSDParser(object):
 
         if not self.header:
             self.parse_header()
-        if not self.ressources:
+        if not self.resources:
             self._skip_block('image resources', new_line=True)
-            self.ressources = 'not parsed'
+            self.resources = 'not parsed'
 
         logger.debug("")
         logger.debug("# Layers & Masks #")
@@ -631,9 +631,9 @@ class PSDParser(object):
 
         if not self.header:
             self.parse_header()
-        if not self.ressources:
+        if not self.resources:
             self._skip_block("image resources", new_line=True)
-            self.ressources = 'not parsed'
+            self.resources = 'not parsed'
         if not self.layers:
             self._skip_block("image layers", new_line=True)
             self.layers = 'not parsed'
