@@ -1,3 +1,5 @@
+from __future__ import division
+
 import struct
 import zlib
 
@@ -13,13 +15,16 @@ try:
 except ImportError:
     from io import StringIO  # Python 3
 
+
 def pad4(s):
     while len(s) % 4:
         s += chr(0)
     return s
 
+
 class GD2Exception(Exception):
     pass
+
 
 class GD2(gameduino2.base.GD2):
 
@@ -49,7 +54,7 @@ class GD2(gameduino2.base.GD2):
         self.wr32(reg.REG_PCLK_POL, 1)
 
         self.cmd_dlstart()
-        self.Clear(1,1,1)
+        self.Clear(1, 1, 1)
         self.Display()
         self.cmd_swap()
         self.cmd_regwrite(reg.REG_PCLK, 5)
@@ -113,27 +118,27 @@ class GD2(gameduino2.base.GD2):
         c = self.cc.getvalue()
         self.cc = StringIO()
         for i in range(0, len(c), 4096):
-            res = self.command(c[i:i+4096])
+            res = self.command(c[i:i + 4096])
         # self.v.waitidle()
 
     def c(self, cmdstr):
         self.cc.write(pad4(cmdstr))
 
-    def load_image(self, im, dither = False, fmt = reg.ARGB1555, sampling = reg.NEAREST, zoom = 1):
+    def load_image(self, im, dither=False, fmt=reg.ARGB1555, sampling=reg.NEAREST, zoom=1):
         strides = {
-            reg.L1 :       lambda w: w / 8,
-            reg.L4 :       lambda w: w / 2,
-            reg.L8 :       lambda w: w,
-            reg.RGB332 :   lambda w: w,
-            reg.ARGB2 :    lambda w: w,
-            reg.PALETTED : lambda w: w,
+            reg.L1: lambda w: w // 8,
+            reg.L4: lambda w: w // 2,
+            reg.L8: lambda w: w,
+            reg.RGB332: lambda w: w,
+            reg.ARGB2: lambda w: w,
+            reg.PALETTED: lambda w: w,
         }
         if fmt == reg.L1:
             i = Image.new(im.mode, ((im.size[0] + 7) & ~7, im.size[1]))
-            i.paste(im, (0,0))
+            i.paste(im, (0, 0))
             im = i
         stride = strides.get(fmt, lambda w: 2 * w)(im.size[0])
-        (_,da) = convert.convert(im, dither = dither, fmt = fmt)
+        (_, da) = convert.convert(im, dither=dither, fmt=fmt)
         self.ramptr = (self.ramptr + 1) & ~1
         self.zload(self.ramptr, da.tostring())
         self.BitmapSize(sampling, reg.BORDER, reg.BORDER, min(511, zoom * im.size[0]), min(511, zoom * im.size[1]))
