@@ -43,16 +43,17 @@ __author__ = 'DR0ID @ 2009-2011'
 #  -----------------------------------------------------------------------------
 
 
-import sys
-from xml.dom import minidom, Node
-try:
-    import StringIO
-    from StringIO import StringIO
-except:
-    from io import StringIO
+import array
 import os.path
 import struct
-import array
+import sys
+from xml.dom import Node, minidom
+
+try:
+    # noinspection PyUnresolvedReferences,PyCompatibility
+    from StringIO import StringIO  # Python 2
+except ImportError:
+    from io import StringIO # Python 3
 
 #  -----------------------------------------------------------------------------
 class TileMap(object):
