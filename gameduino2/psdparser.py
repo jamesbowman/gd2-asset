@@ -16,9 +16,9 @@
 # along with Psdparser.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import sys
-from struct import unpack, calcsize
-import Image
+from struct import calcsize, unpack
+
+from PIL import Image
 
 logger = logging.getLogger(__name__)
 
