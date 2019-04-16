@@ -1,22 +1,22 @@
-import sys
-import array
-import StringIO
-import zlib
 import struct
-import time
+import zlib
 
-PYTHON2 = (sys.version_info < (3, 0))
+from PIL import Image
 
-import Image
-import convert
+import gameduino2.base
+import gameduino2.registers as reg
+from gameduino2 import convert
+
+try:
+    # noinspection PyUnresolvedReferences,PyCompatibility
+    from StringIO import StringIO  # Python 2
+except ImportError:
+    from io import StringIO  # Python 3
 
 def pad4(s):
     while len(s) % 4:
         s += chr(0)
     return s
-
-import gameduino2.registers as reg
-import gameduino2.base
 
 class GD2Exception(Exception):
     pass
@@ -27,7 +27,7 @@ class GD2(gameduino2.base.GD2):
         self.ramptr = 0
         self.wp = 0
 
-        self.cc = StringIO.StringIO()
+        self.cc = StringIO()
         self.transport = transport
 
         self.transport.reset()
@@ -111,7 +111,7 @@ class GD2(gameduino2.base.GD2):
 
     def finish(self):
         c = self.cc.getvalue()
-        self.cc = StringIO.StringIO()
+        self.cc = StringIO()
         for i in range(0, len(c), 4096):
             res = self.command(c[i:i+4096])
         # self.v.waitidle()
