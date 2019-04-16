@@ -3,7 +3,7 @@
 """
 TileMap loader for python for Tiled, a generic tile map editor
 from http://mapeditor.org/ .
-It loads the \*.tmx files produced by Tiled.
+It loads the *.tmx files produced by Tiled.
 
 
 """
@@ -152,8 +152,8 @@ class TileMap(object):
             tile_set.margin = int(tile_set.margin)
             for img in tile_set.images:
                 if img.trans:
-                    img.trans = (int(img.trans[:2], 16), \
-                                 int(img.trans[2:4], 16), \
+                    img.trans = (int(img.trans[:2], 16),
+                                 int(img.trans[2:4], 16),
                                  int(img.trans[4:], 16))
 
     def decode(self):
@@ -347,12 +347,10 @@ class TileLayer(object):
                     list_of_lines = content.split()
                     for line in list_of_lines:
                         self.decoded_content.extend(line.split(','))
-                    self.decoded_content = list(map(int, \
-                                                    [val for val in self.decoded_content if val]))
+                    self.decoded_content = list(map(int, [val for val in self.decoded_content if val]))
                     content = ""
                 else:
-                    raise Exception('unknown data encoding %s' % \
-                                    (self.encoding))
+                    raise Exception('unknown data encoding %s' % self.encoding)
             else:
                 # in the case of xml the encoded_content already contains a
                 # list of integers
@@ -364,8 +362,7 @@ class TileLayer(object):
                 elif self.compression == 'zlib':
                     content = decompress_zlib(content)
                 else:
-                    raise Exception('unknown data compression %s' % \
-                                    (self.compression))
+                    raise Exception('unknown data compression %s' % self.compression)
         else:
             raise Exception('no encoded content to decode')
 
@@ -391,8 +388,7 @@ class TileLayer(object):
         for xpos in range(self.width):
             self.content2D.append(array.array('I'))
             for ypos in range(self.height):
-                self.content2D[xpos].append( \
-                        self.decoded_content[xpos + ypos * self.width])
+                self.content2D[xpos].append(self.decoded_content[xpos + ypos * self.width])
 
     def pretty_print(self):
         num = 0
@@ -600,7 +596,8 @@ def printer(obj, ident=''):
 
 #  -----------------------------------------------------------------------------
 
-class VersionError(Exception): pass
+class VersionError(Exception):
+    pass
 
 
 #  -----------------------------------------------------------------------------
@@ -616,8 +613,7 @@ class TileMapParser(object):
         if hasattr(tile_set, "source"):
             tile_set = self._parse_tsx(tile_set.source, tile_set, world_map)
         else:
-            tile_set = self._get_tile_set(tile_set_node, tile_set, \
-                                          self.map_file_name)
+            tile_set = self._get_tile_set(tile_set_node, tile_set, self.map_file_name)
         world_map.tile_sets.append(tile_set)
 
     def _parse_tsx(self, file_name, tile_set, world_map):
@@ -720,7 +716,7 @@ class TileMapParser(object):
             for p in self._get_nodes(node.childNodes, 'polyline'):
                 def xy(s):
                     (x, y) = [int(c) for c in s.split(",")]
-                    return (int(tiled_object.x) + x, int(tiled_object.y) + y)
+                    return int(tiled_object.x) + x, int(tiled_object.y) + y
 
                 tiled_object.polyline = \
                     [xy(s) for s in p.attributes['points'].nodeValue.split()]
@@ -896,8 +892,7 @@ class AbstractResourceLoader(object):
 
     def _load_image_from_source(self, tile_map, tile_set, a_tile_image):
         # relative path to file
-        img_path = os.path.join(os.path.dirname(tile_map.map_file_name), \
-                                a_tile_image.source)
+        img_path = os.path.join(os.path.dirname(tile_map.map_file_name), a_tile_image.source)
         tile_width = int(tile_map.tilewidth)
         tile_height = int(tile_map.tileheight)
         if tile_set.tileheight:
@@ -910,9 +905,7 @@ class AbstractResourceLoader(object):
         if tile_height > tile_map.tileheight:
             offsety = tile_height - tile_map.tileheight
         idx = 0
-        for image in self._load_image_parts(img_path, \
-                                            tile_set.margin, tile_set.spacing, \
-                                            tile_width, tile_height, a_tile_image.trans):
+        for image in self._load_image_parts(img_path, tile_set.margin, tile_set.spacing, tile_width, tile_height, a_tile_image.trans):
             self.indexed_tiles[int(tile_set.firstgid) + idx] = \
                 (offsetx, -offsety, image)
             idx += 1
