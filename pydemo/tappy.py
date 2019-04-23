@@ -1,5 +1,3 @@
-import sys
-
 import atlas
 
 import GD
