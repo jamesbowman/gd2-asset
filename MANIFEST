@@ -7,6 +7,7 @@ gameduino2/imbytes.py
 gameduino2/prep.py
 gameduino2/psdparser.py
 gameduino2/registers.py
+gameduino2/gd3registers.py
 gameduino2/remote.py
 gameduino2/tmxreader.py
 scripts/gd2asset

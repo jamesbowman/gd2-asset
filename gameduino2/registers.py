@@ -1,10 +1,5 @@
+from __future__ import division
 
-def RGB(r, g, b):
-    return (r << 16) | (g << 8) | b
-
-def DEGREES(n):
-    # Convert degrees to Furmans
-    return 65536 * n / 360
 
 NEVER                = 0
 LESS                 = 1
@@ -194,10 +189,20 @@ REG_VSIZE            = 1057860
 REG_VSYNC0           = 1057864
 REG_VSYNC1           = 1057868
 
-def VERTEX2II(x, y, handle, cell):
-    return ((2 << 30) | ((x & 511) << 21) | ((y & 511) << 12) | ((handle & 31) << 7) | ((cell & 127) << 0))
-
 RED                  = 2
 GREEN                = 3
 BLUE                 = 4
 ALPHA                = 5
+
+
+def VERTEX2II(x, y, handle, cell):
+    return (2 << 30) | ((x & 511) << 21) | ((y & 511) << 12) | ((handle & 31) << 7) | ((cell & 127) << 0)
+
+
+def RGB(r, g, b):
+    return (r << 16) | (g << 8) | b
+
+
+def DEGREES(n):
+    # Convert degrees to Furmans
+    return 65536 * n // 360
