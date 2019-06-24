@@ -10,8 +10,8 @@ class CoprocessorException(Exception):
     pass
 
 class GD(gameduino2.base.GD2):
-    def __init__(self):
-        self.spi = SPIDriver("/dev/serial/by-id/usb-FTDI_FT230X_Basic_UART_DO01HE8Q-if00-port0")
+    def __init__(self, dev):
+        self.spi = SPIDriver(dev)
 
         self.spi.setb(1)
         if False:
@@ -24,7 +24,7 @@ class GD(gameduino2.base.GD2):
 
         t0 = time.time()
         while self._rd32(gd3.REG_ID) != 0x7c:
-            assert (time.time() - t0) < 1.0
+            assert (time.time() - t0) < 1.0, "No response - is GD attached?"
 
         if 0:
             time.sleep(1)
