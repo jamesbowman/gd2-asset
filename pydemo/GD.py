@@ -12,8 +12,29 @@ class CoprocessorException(Exception):
 class GD(gameduino2.base.GD2):
     def __init__(self):
         self.spi = SPIDriver("/dev/serial/by-id/usb-FTDI_FT230X_Basic_UART_DO01HE8Q-if00-port0")
+
+        self.spi.setb(1)
+        if False:
+            self.spi.setb(0)
+            time.sleep(1)
+            self.spi.setb(1)
+            time.sleep(1)
+
         self.coldstart()
 
+        t0 = time.time()
+        while self._rd32(gd3.REG_ID) != 0x7c:
+            assert (time.time() - t0) < 1.0
+
+        if 0:
+            time.sleep(1)
+            print("ID        %8x" % self._rd32(gd3.REG_ID))
+            print("CMD_READ  %8x" % self._rd32(gd3.REG_CMD_READ))
+            print("CMD_WRITE %8x" % self._rd32(gd3.REG_CMD_WRITE))
+            print("CMD_SPACE %8x" % self._rd32(gd3.REG_CMDB_SPACE))
+
+        while self._rd32(gd3.REG_ID) != 0x7c:
+            time.sleep(.1)
         self.getspace()
         self.stream()
 
@@ -47,6 +68,11 @@ class GD(gameduino2.base.GD2):
     def _wr32(self, a, v):
         self.start(0x800000 | a)
         self.spi.write(struct.pack("I", v))
+        self.spi.unsel()
+
+    def _wr(self, a, v):
+        self.start(0x800000 | a)
+        self.spi.write(v)
         self.spi.unsel()
 
     def getspace(self):
@@ -85,6 +111,9 @@ class GD(gameduino2.base.GD2):
             self.spi.write(s)
             self.space -= len(s)
 
+    def flush(self):
+        pass
+
     def finish(self):
         self.reserve(4092)
 
@@ -106,6 +135,11 @@ class GD(gameduino2.base.GD2):
         self.stream()
         return r
 
+    def wr(self, a, v):
+        self.unstream()
+        r = self._wr(a, v)
+        self.stream()
+
     def result(self, n=1):
         # Return the result field of the preceding command
         self.finish()
@@ -115,7 +149,7 @@ class GD(gameduino2.base.GD2):
         self.stream()
         return r
 
-    def setup_480_272(self):
+    def setup_480x272(self):
         b = 6
         setup = [
             (gd3.REG_OUTBITS, b * 73),
@@ -136,6 +170,40 @@ class GD(gameduino2.base.GD2):
 
         self.w = 480
         self.h = 272
+
+    def setup_800x480(self):
+        b = 6
+        setup = [
+            (gd3.REG_OUTBITS, b * 73),
+            (gd3.REG_DITHER, 1),
+            (gd3.REG_GPIO, 0x83),
+            (gd3.REG_ROTATE, 0),
+            (gd3.REG_SWIZZLE, 3),
+            (gd3.REG_HCYCLE, 928),
+            (gd3.REG_HOFFSET, 88),
+            (gd3.REG_HSIZE, 800),
+            (gd3.REG_HSYNC0, 0),
+            (gd3.REG_HSYNC1, 48),
+            (gd3.REG_VCYCLE, 525),
+            (gd3.REG_VOFFSET, 32),
+            (gd3.REG_VSIZE, 480),
+            (gd3.REG_VSYNC0, 0),
+            (gd3.REG_VSYNC1, 3),
+            (gd3.REG_CSPREAD, 0),
+            (gd3.REG_PCLK_POL, 0),
+        ]
+        for (a, v) in setup:
+            self.cmd_regwrite(a, v)
+
+        self.Clear()
+        self.swap()
+        self.finish()
+
+        self.cmd_regwrite(gd3.REG_PCLK, 2)  # Enable display
+
+        self.w = 800
+        self.h = 480
+
 
     def calibrate(self):
         self.Clear()

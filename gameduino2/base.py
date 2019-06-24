@@ -22,6 +22,12 @@ def furmans(deg):
     return 0xffff & ((0x10000 * deg) // 360)
 
 class GD2:
+
+    arch = '800'
+    def set_arch(self, arch):
+        assert arch in ('800', '810', '815')
+        self.arch = arch
+        
     def c4(self, i):
         """Send a 32-bit value to the GD2."""
         self.c(struct.pack("I", i))
@@ -94,10 +100,18 @@ class GD2:
         self.c4((36 << 24))
     def SaveContext(self):
         self.c4((34 << 24))
+
     def ScissorSize(self, width,height):
-        self.c4((28 << 24) | ((width & 1023) << 10) | ((height & 1023)))
+        if self.arch == '800':
+            self.c4((28 << 24) | ((width & 1023) << 10) | ((height & 1023)))
+        else:
+            self.c4((28 << 24) | ((width & 4095) << 12) | ((height & 4095)))
     def ScissorXY(self, x,y):
-        self.c4((27 << 24) | ((x & 511) << 9) | ((y & 511)))
+        if self.arch == '800':
+            self.c4((27 << 24) | ((x & 511) << 9) | ((y & 511)))
+        else:
+            self.c4((27 << 24) | ((x & 2047) << 11) | ((y & 2047)))
+
     def StencilFunc(self, func,ref,mask):
         self.c4((10 << 24) | ((func & 7) << 16) | ((ref & 255) << 8) | ((mask & 255)))
     def StencilMask(self, mask):
@@ -108,24 +122,35 @@ class GD2:
         self.c4((20 << 24) | ((mask & 1)))
     def Tag(self, s):
         self.c4((3 << 24) | ((s & 255)))
-    vertex_scale = 4
     def Vertex2f_2(self, x, y):
-        x = int(16 * x)
-        y = int(16 * y)
+        x = int(2 * x)
+        y = int(2 * y)
         self.c4(0x40000000 | ((x & 32767) << 15) | (y & 32767))
     def Vertex2f_4(self, x, y):
-        x = int(16 * x)
-        y = int(16 * y)
+        x = int(4 * x)
+        y = int(4 * y)
         self.c4(0x40000000 | ((x & 32767) << 15) | (y & 32767))
     def Vertex2f_8(self, x, y):
-        x = int(16 * x)
-        y = int(16 * y)
+        x = int(8 * x)
+        y = int(8 * y)
         self.c4(0x40000000 | ((x & 32767) << 15) | (y & 32767))
     def Vertex2f_16(self, x, y):
         x = int(16 * x)
         y = int(16 * y)
         self.c4(0x40000000 | ((x & 32767) << 15) | (y & 32767))
+
+    vertex_scale = 4
     Vertex2f = Vertex2f_16
+
+    def set_vertex_scale(self, f):
+        self.vertex_scale = f
+        self.Vertex2f = [
+            None,
+            self.Vertex2f_2,
+            self.Vertex2f_4,
+            self.Vertex2f_8,
+            self.Vertex2f_16][f]
+
     def Vertex2ii(self, x, y, handle = 0, cell = 0):
         self.c4((2 << 30) | ((x & 511) << 21) | ((y & 511) << 12) | ((handle & 31) << 7) | ((cell & 127)))
 
@@ -286,7 +311,7 @@ class GD2:
 
     def VertexFormat(self, frac):
         self.c4((39 << 24) | (frac & 7))
-        self.vertex_scale = frac
+        self.set_vertex_scale(frac)
         self.Vertex2f = [
             self.Vertex2f_2,
             self.Vertex2f_2,
@@ -385,3 +410,7 @@ class GD2:
 
     def cmd_rotate_around(self, x, y, a, s = 1):
         self.c(struct.pack("IIIII", 0xffffff51, x, y, furmans(a), int(65536 * s)))
+
+    def cmd_inflate2(self, ptr, options):
+        self.c(struct.pack("III", 0xffffff50, ptr, options))
+
