@@ -47,7 +47,7 @@ class GD2:
     def BitmapSize(self, filter,wrapx,wrapy,width,height):
         self.c4((8 << 24) | ((filter & 1) << 20) | ((wrapx & 1) << 19) | ((wrapy & 1) << 18) | ((width & 511) << 9) | ((height & 511)))
     def BitmapSource(self, addr):
-        self.c4((1 << 24) | ((addr & 8388607)))
+        self.c4((1 << 24) | ((addr & 0xffffff)))
     def BitmapTransformA(self, a):
         self.c4((21 << 24) | ((a & 131071)))
     def BitmapTransformB(self, b):
