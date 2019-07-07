@@ -111,6 +111,8 @@ OPT_NOHANDS          = 49152
 OPT_RIGHTX           = 2048
 OPT_SIGNED           = 256
 
+OPT_FORMAT           = 4096     # For 815
+
 LINEAR_SAMPLES       = 0
 ULAW_SAMPLES         = 1
 ADPCM_SAMPLES        = 2

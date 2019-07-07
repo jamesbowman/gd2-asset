@@ -1,4 +1,5 @@
 import sys
+import array
 import struct
 
 PYTHON2 = (sys.version_info < (3, 0))
@@ -285,8 +286,12 @@ class GD2:
     def cmd_swap(self):
         self.c(struct.pack("I", 0xffffff01))
 
-    def cmd_text(self, x, y, font, options, s):
-        self.c(align4(struct.pack("IhhhH", 0xffffff0c, x, y, font, options) + packstring(s)))
+    def cmd_text(self, x, y, font, options, s, *args):
+        if PYTHON2:
+            aa = array.array("I", args).tostring()
+        else:
+            aa = array.array("I", args).tobytes()
+        self.c(align4(struct.pack("IhhhH", 0xffffff0c, x, y, font, options) + packstring(s)) + aa)
 
     def cmd_toggle(self, x, y, w, font, options, state, s):
         self.c(struct.pack("IhhhhHH", 0xffffff12, x, y, w, font, options, state) + packstring(s))
