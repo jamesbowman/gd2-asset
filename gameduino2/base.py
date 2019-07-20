@@ -424,3 +424,6 @@ class GD2:
 
     def cmd_animframe(self, x, y, aoptr, frame):
         self.c(struct.pack("IhhII", 0xffffff5a, x, y, aoptr, frame))
+
+    def cmd_nop(self):
+        self.c(struct.pack("I", 0xffffff5b))
