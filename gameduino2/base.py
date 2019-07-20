@@ -1,4 +1,5 @@
 import sys
+import array
 import struct
 
 PYTHON2 = (sys.version_info < (3, 0))
@@ -47,19 +48,19 @@ class GD2:
     def BitmapSize(self, filter,wrapx,wrapy,width,height):
         self.c4((8 << 24) | ((filter & 1) << 20) | ((wrapx & 1) << 19) | ((wrapy & 1) << 18) | ((width & 511) << 9) | ((height & 511)))
     def BitmapSource(self, addr):
-        self.c4((1 << 24) | ((addr & 8388607)))
-    def BitmapTransformA(self, a):
-        self.c4((21 << 24) | ((a & 131071)))
-    def BitmapTransformB(self, b):
-        self.c4((22 << 24) | ((b & 131071)))
-    def BitmapTransformC(self, c):
-        self.c4((23 << 24) | ((c & 16777215)))
-    def BitmapTransformD(self, d):
-        self.c4((24 << 24) | ((d & 131071)))
-    def BitmapTransformE(self, e):
-        self.c4((25 << 24) | ((e & 131071)))
-    def BitmapTransformF(self, f):
-        self.c4((26 << 24) | ((f & 16777215)))
+        self.c4((1 << 24) | ((addr & 0xffffff)))
+    def BitmapTransformA(self, a, p = 0):
+        self.c4((21 << 24) | ((p & 1) << 17) | ((a & 131071)))
+    def BitmapTransformB(self, b, p = 0):
+        self.c4((22 << 24) | ((p & 1) << 17) | ((b & 131071)))
+    def BitmapTransformC(self, c, p = 0):
+        self.c4((23 << 24) | ((p & 1) << 17) | ((c & 16777215)))
+    def BitmapTransformD(self, d, p = 0):
+        self.c4((24 << 24) | ((p & 1) << 17) | ((d & 131071)))
+    def BitmapTransformE(self, e, p = 0):
+        self.c4((25 << 24) | ((p & 1) << 17) | ((e & 131071)))
+    def BitmapTransformF(self, f, p = 0):
+        self.c4((26 << 24) | ((p & 1) << 17) | ((f & 16777215)))
     def BlendFunc(self, src,dst):
         self.c4((11 << 24) | ((src & 7) << 3) | ((dst & 7)))
     def Call(self, dest):
@@ -285,8 +286,12 @@ class GD2:
     def cmd_swap(self):
         self.c(struct.pack("I", 0xffffff01))
 
-    def cmd_text(self, x, y, font, options, s):
-        self.c(align4(struct.pack("IhhhH", 0xffffff0c, x, y, font, options) + packstring(s)))
+    def cmd_text(self, x, y, font, options, s, *args):
+        if PYTHON2:
+            aa = array.array("I", args).tostring()
+        else:
+            aa = array.array("I", args).tobytes()
+        self.c(align4(struct.pack("IhhhH", 0xffffff0c, x, y, font, options) + packstring(s)) + aa)
 
     def cmd_toggle(self, x, y, w, font, options, state, s):
         self.c(struct.pack("IhhhhHH", 0xffffff12, x, y, w, font, options, state) + packstring(s))
@@ -414,3 +419,8 @@ class GD2:
     def cmd_inflate2(self, ptr, options):
         self.c(struct.pack("III", 0xffffff50, ptr, options))
 
+    def cmd_appendf(self, ptr, num):
+        self.c(struct.pack("III", 0xffffff59, ptr, num))
+
+    def cmd_animframe(self, x, y, aoptr, frame):
+        self.c(struct.pack("IhhII", 0xffffff5a, x, y, aoptr, frame))
