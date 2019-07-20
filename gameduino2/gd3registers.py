@@ -111,6 +111,7 @@ OPT_NOHANDS          = 49152
 OPT_RIGHTX           = 2048
 OPT_SIGNED           = 256
 
+OPT_MEDIAFIFO        = 16
 OPT_FORMAT           = 4096     # For 815
 
 LINEAR_SAMPLES       = 0
@@ -225,7 +226,15 @@ GREEN                = 3
 BLUE                 = 4
 ALPHA                = 5
 
-# These are 815 registers
+# 810 registers
+
+REG_MEDIAFIFO_BASE = 0x30901c 
+REG_MEDIAFIFO_READ = 0x309014 
+REG_MEDIAFIFO_SIZE = 0x309020 
+REG_MEDIAFIFO_WRITE= 0x309018 
+
+
+# 815 registers
 REG_FLASH_SIZE = 0x00309024 
 REG_FLASH_STATUS = 0x003025f0 
 
