@@ -159,14 +159,14 @@ class GD(gameduino2.base.GD2):
             (gd3.REG_ROTATE, 0),
             (gd3.REG_SWIZZLE, 3),
         ]
-        for (a, v) in setup:
-            self.cmd_regwrite(a, v)
 
         self.Clear()
         self.swap()
-        self.finish()
+        for (a, v) in setup:
+            self.cmd_regwrite(a, v)
 
         self.cmd_regwrite(gd3.REG_PCLK, 5)  # Enable display
+        self.finish()
 
         self.w = 480
         self.h = 272
