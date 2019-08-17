@@ -229,13 +229,13 @@ def pma(im):
 
 class EVE(gameduino2.base.GD2):
     def __init__(self):
-        self.d = ""
+        self.d = b""
 
     def c(self, s):
         self.d += s
 
 def chunker(seq, size):
-    return (seq[pos:pos + size] for pos in xrange(0, len(seq), size))
+    return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
 class AssetBin(gameduino2.base.GD2):
 
@@ -814,13 +814,15 @@ class AssetBin(gameduino2.base.GD2):
             hh.write("};\n")
             hh.write("#define %sLOAD_ASSETS()  (GD.copy(%s__assets, sizeof(%s__assets)), GD.loadptr = %sASSETS_END)\n" % (p, p, p, p))
         else:
-            open(self.asset_file, "wb").write(commandblock)
+            with open(self.asset_file, "wb") as f:
+                f.write(commandblock)
             hh.write('#define %sLOAD_ASSETS()  (GD.safeload("%s"), GD.loadptr = %sASSETS_END)\n' % (p, self.asset_file, p))
 
         for i in self.inits:
             hh.write(i + "\n")
         self.dump_bitmaps(hh)
         self.extras(hh)
+        hh.close()
 
     def dump_bitmaps(self, hh):
         hh.write("struct {\n")

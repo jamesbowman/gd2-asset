@@ -49,6 +49,8 @@ import struct
 import sys
 from xml.dom import Node, minidom
 
+PYTHON2 = (sys.version_info < (3, 0))
+
 try:
     # noinspection PyUnresolvedReferences,PyCompatibility
     from StringIO import StringIO  # Python 2
@@ -525,8 +527,10 @@ def decode_base64(in_str):
     :returns: decoded string
     """
     import base64
-    return base64.decodebytes(in_str.encode('latin-1'))
-
+    if PYTHON2:
+        return base64.decodestring(in_str.encode('latin-1'))
+    else:
+        return base64.decodebytes(in_str.encode('latin-1'))
 
 #  -----------------------------------------------------------------------------
 def decompress_gzip(in_str):

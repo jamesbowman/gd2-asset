@@ -1,5 +1,6 @@
 from __future__ import division
 
+import sys
 import array
 import random
 
@@ -8,6 +9,7 @@ from PIL import Image
 from gameduino2.imbytes import imbytes
 from gameduino2.registers import ARGB1555, ARGB2, ARGB4, L1, L2, L4, L8, PALETTED, RGB332, RGB565
 
+PYTHON2 = (sys.version_info < (3, 0))
 
 def convert(im, dither=False, fmt=ARGB1555):
     """ Convert PIL image to GD2 format, optionally dithering"""
@@ -46,7 +48,11 @@ def convert(im, dither=False, fmt=ARGB1555):
                 binary = ((a >> (8 - asz)) << (bsz + gsz + rsz)) | ((r >> (8 - rsz)) << (gsz + bsz)) | ((g >> (8 - gsz)) << bsz) | (b >> (8 - bsz))
                 imdata.append(binary)
         fmtchr = {8: 'B', 16: 'H'}[totalsz]
-        data = array.array('B', array.array(fmtchr, imdata).tostring())
+        imd = array.array(fmtchr, imdata)
+        if PYTHON2:
+            data = array.array('B', imd.tostring())
+        else:
+            data = array.array('B', imd.tobytes())
     elif fmt == PALETTED:
         im = im.convert("P", palette=Image.ADAPTIVE)
         lut = im.resize((256, 1))
