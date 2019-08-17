@@ -300,7 +300,7 @@ class GD2:
         self.c(struct.pack("IiiiiiiiiiiiiH", 0xffffff20, x0, y0, x1, y1, x2, y2, tx0, ty0, tx1, ty1, tx2, ty2, result))
 
     def cmd_track(self, x, y, w, h, tag):
-        self.c(struct.pack("Ihhhhh", 0xffffff2c, x, y, w, h, tag))
+        self.c(struct.pack("Ihhhhhh", 0xffffff2c, x, y, w, h, tag, 0))
 
     def cmd_translate(self, tx, ty):
         self.c(struct.pack("Iii", 0xffffff27, f16(tx), f16(ty)))
@@ -361,10 +361,12 @@ class GD2:
     def cmd_setbitmap(self, source, fmt, w, h):
         self.c(struct.pack("IIHhhh", 0xffffff43, source, fmt, w, h, 0))
 
+    def cmd_setfont2(self, font, ptr, firstchar):
+        self.c(struct.pack("IIII", 0xffffff3b, font, ptr, firstchar))
+
     # def cmd_snapshot2(self, 
     # def cmd_setbase(self, 
     # def cmd_playvideo(self, 
-    # def cmd_setfont2(self, 
     # def cmd_setscratch(self, 
     # def cmd_videostart(self, 
     # def cmd_videoframe(self, 
