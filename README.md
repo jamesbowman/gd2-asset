@@ -1,5 +1,6 @@
 # gd2-asset
 
+[![Build Status](https://travis-ci.org/jamesbowman/gd2-asset.svg?branch=master)](https://travis-ci.org/jamesbowman/gd2-asset)
 
 The repo contains the source for ``gd2asset`` and ``gd3assets`` - command-line tools
 for converting graphics, fonts and sound for Gameduino 2, 3 and 3X.

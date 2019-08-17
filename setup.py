@@ -9,4 +9,5 @@ setup(name='gameduino2',
       license='GPL',
       packages=['gameduino2'],
       scripts=['scripts/gd2asset', 'scripts/gd3asset'],
+      install_requires=['pillow']
 )
