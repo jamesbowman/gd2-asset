@@ -19,6 +19,8 @@ formats = ('L1', 'L2', 'L4', 'L8', 'RGB332', 'ARGB2', 'ARGB4', 'RGB565', 'ARGB15
 
 def cname(s):
     """ make name s C-friendly """
+    if s[0].isdigit():
+        s = "_" + s
     for c in "-+.":
         s = s.replace(c, "_")
     return s.upper()
