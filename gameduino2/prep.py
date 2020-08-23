@@ -251,6 +251,7 @@ class AssetBin(gameduino2.base.GD2):
         self.handle = 0
         self.np = None
         self.bitmaps = []
+        self.bm = []
 
         # Set defaults for FT800. target_810() modifies these
         self.device = 'GD2'
@@ -292,7 +293,7 @@ class AssetBin(gameduino2.base.GD2):
             self.align(64)
             (w, h) = astc_dims(fmt)         # w,h ASTC tile size
             (iw,ih) = im.size               # iw,ih image size
-            iw = round_up(iw, w)
+            iw = round_up(iw, 2 * w)
             ih = round_up(ih, h)
 
             bw = iw // w                    # bw,bh ASTC block size
@@ -370,6 +371,15 @@ class AssetBin(gameduino2.base.GD2):
             self.defines.append(("%s_HEIGHT" % name, h))
             self.defines.append(("%s_CELLS" % name, len(images)))
             self.bitmaps.append((name.lower(), w, h, w // 2, h // 2, len(self.alldata), fmt, self.handle))
+            self.bm.append(dict(
+                name = name.lower(),
+                w = w,
+                h = h,
+                src = len(self.alldata),
+                fmt = fmt,
+                handle = self.handle,
+                cells = len(images),
+                ))
 
         self.BitmapHandle(self.handle)
         self.BitmapSource(len(self.alldata))
@@ -389,8 +399,8 @@ class AssetBin(gameduino2.base.GD2):
         if is_astc(fmt):
             (w, h) = astc_dims(fmt)         # w,h ASTC tile size
             (iw,ih) = images[0].size        # iw,ih image size
-            iw = round_up(iw, w)
-            ih = round_up(ih, h)
+            iw = round_up(iw, 2 * w)
+            ih = round_up(ih, 2 * h)
 
             bw = iw // w                    # bw,bh ASTC block size
             bh = ih // w
@@ -481,9 +491,10 @@ class AssetBin(gameduino2.base.GD2):
         # print name, 'font requires', (p1 - p0), 'bytes'
         sz = ims[trim0].size
         stride = onechar // sz[1]
-        self.BitmapSource(p0 - (onechar * trim0))
+        src = (p0 - (onechar * trim0)) & 0x7fffff
+        self.BitmapSource(src)
         widths = [max(0, w) for w in widths]
-        dblock = array.array('B', widths).tostring() + struct.pack("<5i", fmt, stride, sz[0], sz[1], p0 - (onechar * trim0))
+        dblock = array.array('B', widths).tostring() + struct.pack("<5i", fmt, stride, sz[0], sz[1], src)
         self.alldata += dblock
         self.cmd_setfont(h, p1)
 
@@ -831,7 +842,7 @@ class AssetBin(gameduino2.base.GD2):
         fmt = " /* %16s */  {{%3d, %3d}, {%3d, %3d}, %#8xUL, %2d, %2d}"
         hh.write(",\n".join([fmt % bm for bm in self.bitmaps]))
         hh.write("\n};\n")
-            
+
     def addall(self):
         pass
     def extras(self, hh):
