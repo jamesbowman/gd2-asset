@@ -20,7 +20,7 @@ else:
 
 def furmans(deg):
     """ Given an angle in degrees, return it in Furmans """
-    return 0xffff & ((0x10000 * deg) // 360)
+    return 0xffff & f16(deg / 360.0)
 
 class GD2:
 
@@ -140,17 +140,7 @@ class GD2:
         y = int(16 * y)
         self.c4(0x40000000 | ((x & 32767) << 15) | (y & 32767))
 
-    vertex_scale = 4
     Vertex2f = Vertex2f_16
-
-    def set_vertex_scale(self, f):
-        self.vertex_scale = f
-        self.Vertex2f = [
-            None,
-            self.Vertex2f_2,
-            self.Vertex2f_4,
-            self.Vertex2f_8,
-            self.Vertex2f_16][f]
 
     def Vertex2ii(self, x, y, handle = 0, cell = 0):
         self.c4((2 << 30) | ((x & 511) << 21) | ((y & 511) << 12) | ((handle & 31) << 7) | ((cell & 127)))
@@ -251,7 +241,7 @@ class GD2:
         self.c(struct.pack("III", 0xffffff19, ptr, result))
 
     def cmd_rotate(self, a):
-        self.c(struct.pack("Ii", 0xffffff29, a))
+        self.c(struct.pack("Ii", 0xffffff29, furmans(a)))
 
     def cmd_scale(self, sx, sy):
         self.c(struct.pack("Iii", 0xffffff28, f16(sx), f16(sy)))
@@ -316,7 +306,6 @@ class GD2:
 
     def VertexFormat(self, frac):
         self.c4((39 << 24) | (frac & 7))
-        self.set_vertex_scale(frac)
         self.Vertex2f = [
             self.Vertex2f_2,
             self.Vertex2f_2,
