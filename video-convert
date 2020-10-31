@@ -28,7 +28,7 @@ then
   mkdir -p $TMP
   rm -rf $TMP/*
   $FFMPEG -y -i "$1" -q 1 \
-    -vf scale=${SIZE}:force_original_aspect_ratio=decrease \
+    -vf scale=${SIZE} \
     $TMP/master.mkv
 fi
 
