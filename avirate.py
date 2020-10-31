@@ -22,9 +22,9 @@ class Avi:
     def parse(self, level = 0):
         fourcc = self.get(4)
         (size, ) = self.unpack("I")
-        if fourcc in ('RIFF', 'LIST'):
-            print ("    " * level)+ fourcc, pp4(fourcc), size
-            if fourcc == 'RIFF':
+        if fourcc in (b'RIFF', b'LIST'):
+            # print(("    " * level)+ fourcc, pp4(fourcc), size)
+            if fourcc == b'RIFF':
                 self.remainder = size - 4
             else:
                 self.remainder -= 12
@@ -34,15 +34,15 @@ class Avi:
                 sz -= self.parse(level + 1)
                 assert 0 <= sz
         else:
-            if fourcc == 'avih':
+            if fourcc == b'avih':
                 (
                     _,_,_,
                     dwFlags,dwTotalFrames,_,dwStreams,_,
                     dwWidth,dwHeight,
                     _,_,_,_
                 ) = self.unpack("IIIIIIIIIIIIII")
-                print ("    " * level)+'flags', '%04x' % dwFlags, dwTotalFrames,dwStreams,dwWidth,dwHeight
-            elif fourcc == 'strh':
+                print(("    " * level)+'flags', '%04x' % dwFlags, dwTotalFrames,dwStreams,dwWidth,dwHeight)
+            elif fourcc == b'strh':
                 o = self.f.tell()
                 (
                     fccType, fccHandler,
@@ -54,10 +54,10 @@ class Avi:
                     dwQuality,
                     dwSampleSize,
                     _,_,_,_) = self.unpack("4s4sIHHIIIIIIII4H")
-                if fccType == 'vids':
-                    print 'offset', o
+                if fccType == b'vids':
+                    print('offset', o)
                     self.rate_offset = o + 20
-                print (
+                print((
                     fccType, fccHandler,
                     dwFlags,
                     wPriority, wLanguage,
@@ -66,20 +66,20 @@ class Avi:
                     dwStart, dwLength,
                     dwSuggestedBufferSize,
                     dwQuality,
-                    dwSampleSize)
-                print float(dwRate) / dwScale, 'samples/s'
-            elif fourcc == 'strf':
+                    dwSampleSize))
+                print(float(dwRate) / dwScale, 'samples/s')
+            elif fourcc == b'strf':
                 d = self.get(size)
                 if 0:
                     if size == 16:
-                        print struct.unpack("HHIIHH", d)
+                        print(struct.unpack("HHIIHH", d))
                     if size == 18:
-                        print struct.unpack("HHIIHHH", d)
-            elif fourcc == '01dc':
+                        print(struct.unpack("HHIIHHH", d))
+            elif fourcc == b'01dc':
                 d = self.get(size)
                 if d:
                     self.vtime += 1 / 30.
-            elif fourcc == '01wb':
+            elif fourcc == b'01wb':
                 self.samples.write(self.get(size)[4:])
                 self.atime += (size - 0) / 44100.
             else:
@@ -94,9 +94,12 @@ class Avi:
 
 if __name__ == '__main__':
     rate = Fraction(sys.argv[1])
-    print repr(rate)
+    print(repr(rate))
 
     a = Avi(sys.argv[2])
     a.parse()
+    if 0:
+        a.f.seek(a.rate_offset)
+        print(struct.unpack("II", a.f.read(8)))
     a.f.seek(a.rate_offset)
     a.f.write(struct.pack("II", rate.denominator, rate.numerator))

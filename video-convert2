@@ -5,18 +5,19 @@
 # The converted video is written to "out.avi"
 #
 # Depends on:
-#   sudo apt-get install libjpeg-turbo-progs libav-tools
+#   sudo apt install libjpeg-turbo-progs ffmpeg
 #
 set -e
 
 TMP=tmp
+FFMPEG=ffmpeg
 
 mkdir -p $TMP
 rm -rf $TMP/*
 
 tput clear
 
-FPS=`avprobe "$1" 2>&1 | sed -n 's/.* \([0-9.]*\) fps.*/\1/p'`
+FPS=`ffprobe "$1" 2>&1 | sed -n 's/.* \([0-9.]*\) fps.*/\1/p'`
 
 SIZE="240:136"
 SIZE="336:192"
@@ -26,28 +27,32 @@ if true
 then
   mkdir -p $TMP
   rm -rf $TMP/*
-  avconv -y -i "$1" -q 1 \
+  $FFMPEG -y -i "$1" -q 1 \
     -vf scale=${SIZE}:force_original_aspect_ratio=decrease \
     $TMP/master.mkv
 fi
 
-# 1800 - Arduino starves
+# Set SP to the bit rate:
+#
+# 1500 - acceptable quality for 480x272
+# 1700 - upper limit for playback on Arduino
+# 3000 - upper limit for playback on Teensy
 # 
 
 for SP in 1500
 do
   if false
   then
-    avconv -y -i $TMP/master.mkv -b:v 600k -bufsize 64k -maxrate 600k -c:v mjpeg out.avi
+    $FFMPEG -y -i $TMP/master.mkv -b:v 600k -bufsize 64k -maxrate 600k -c:v mjpeg out.avi
   else
-    avconv -y -r 30 -i $TMP/master.mkv \
+    $FFMPEG -y -r 30 -i $TMP/master.mkv \
     -c:v mjpeg \
     -b:v ${SP}k -bufsize 1024k -maxrate 1800k \
     $TMP/%05d.jpg
 
     ls $TMP/?????.jpg  | xargs -P 8 -n 1 ./squeeze
 
-    avconv -y -i $TMP/%05do.jpg -c:v copy out.avi
+    $FFMPEG -y -i $TMP/%05do.jpg -c:v copy out.avi
   fi
 
   python avirate.py $FPS out.avi
@@ -55,4 +60,4 @@ do
 done
 
 # ls -lh out.avi
-mplayer out.avi
+# mplayer out.avi
