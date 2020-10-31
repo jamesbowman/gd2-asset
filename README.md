@@ -67,3 +67,8 @@ To build the Windows executables, do:
 
     pyinstaller --onefile scripts/gd2asset
     pyinstaller --onefile scripts/gd3asset
+
+Also here is ``video-convert``, the Linux script for converting videos
+to the MJPEG AVI format that can be decoded by the BT81x chip.
+See the script itself for usage details.
+
