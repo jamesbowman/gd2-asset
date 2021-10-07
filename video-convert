@@ -1,6 +1,6 @@
 # Usage:
 #
-#   ./video-convert2 <inputfile>
+#   ./video-convert <inputfile>
 #
 # The converted video is written to "out.avi"
 #
